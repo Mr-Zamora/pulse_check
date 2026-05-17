@@ -71,6 +71,11 @@ function handleStateUpdate(data) {
         hasQuestionData = false;
         responseData = null;
     }
+    
+    // Sync hasSubmitted with server state (prevents resubmission after refresh)
+    if (data.has_submitted !== undefined) {
+        hasSubmitted = data.has_submitted;
+    }
 
     // Track show_responses state
     const showResponsesChanged = data.show_responses !== showResponses;

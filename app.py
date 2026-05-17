@@ -299,6 +299,15 @@ def room_status():
                 question_data['is_multi_select'] = is_multi_select
                 break
 
+    # Check if student has already submitted for this question
+    has_submitted = False
+    if student_name and state['current_q']:
+        responses = read_responses(room_id, state['current_q'])
+        has_submitted = any(
+            r['student_name'] == student_name and r.get('is_correct') != 'DELETED'
+            for r in responses
+        )
+
     return jsonify({
         "status": "success",
         "room_state": state['state'],
@@ -306,7 +315,8 @@ def room_status():
         "time_remaining_seconds": int(time_remaining),
         "timer_type": timer_type,
         "question_data": question_data,
-        "show_responses": bool(state.get('show_responses', 0))
+        "show_responses": bool(state.get('show_responses', 0)),
+        "has_submitted": has_submitted
     })
 
 
