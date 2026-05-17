@@ -246,7 +246,10 @@ def room_status():
         for q in questions:
             if q['question_id'] == state['current_q']:
                 question_data = q.copy()
+                # Check if multi-select before removing correct_answer
+                is_multi_select = ',' in q.get('correct_answer', '')
                 question_data.pop('correct_answer', None)
+                question_data['is_multi_select'] = is_multi_select
                 break
 
     return jsonify({
@@ -428,7 +431,13 @@ def get_responses():
             if target_q['type'] == 'MCQ':
                 for r in responses:
                     ans = r['answer']
-                    stats[ans] = stats.get(ans, 0) + 1
+                    # Handle multi-select: split by comma and count each option
+                    if ',' in ans:
+                        options = [opt.strip() for opt in ans.split(',')]
+                        for opt in options:
+                            stats[opt] = stats.get(opt, 0) + 1
+                    else:
+                        stats[ans] = stats.get(ans, 0) + 1
             elif target_q['type'] == 'SHORT':
                 for r in responses:
                     norm_ans = normalize_answer(r['answer'])
@@ -445,8 +454,10 @@ def get_responses():
             if name in student_states:
                 if target_q['type'] == 'MCQ':
                     student_states[name]["state"] = "mcq_correct" if r['is_correct'] == 'True' else "mcq_incorrect"
+                    student_states[name]["answer"] = r['answer']
                 else:
                     student_states[name]["state"] = "short_submit"
+                    student_states[name]["answer"] = r['answer']
 
     return jsonify({
         "status": "success",

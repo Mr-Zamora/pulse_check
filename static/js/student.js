@@ -1,4 +1,4 @@
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 1000;
 let currentState = null;
 let currentQuestionId = null;
 let hasSubmitted = false;
@@ -151,8 +151,8 @@ function showActiveState(qData) {
     } else {
         if (qData.type === 'MCQ') {
             const options = qData.options.split('|');
-            // Check if this is a multi-select question (correct answer contains comma)
-            const isMultiSelect = qData.correct_answer && qData.correct_answer.includes(',');
+            // Check if this is a multi-select question
+            const isMultiSelect = qData.is_multi_select === true;
             const inputType = isMultiSelect ? 'checkbox' : 'radio';
             
             let optionsHTML = options.map(opt => {

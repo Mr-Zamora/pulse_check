@@ -1,4 +1,4 @@
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 1000;
 let currentQuestions = [];
 let currentRoomState = null;
 let currentQuestionId = null;
@@ -263,10 +263,17 @@ function renderRoster(states) {
         let displayName = isAnonymized ? `Student ${count}` : name;
         let nameStyle = isAnonymized ? `style="filter: blur(4px);"` : "";
         
+        // Show student's answer if available
+        let answerDisplay = '';
+        if (info.answer) {
+            answerDisplay = `<div class="answer" style="font-size: 12px; color: #64748B; margin-top: 4px;">${info.answer}</div>`;
+        }
+        
         html += `
             <div class="student-card ${stateClass}">
                 <div class="name" ${nameStyle}>${displayName}</div>
                 <div class="status">${iconText}</div>
+                ${answerDisplay}
             </div>
         `;
     }
@@ -290,17 +297,17 @@ function renderDistribution(data) {
         if (!q) return;
         
         const options = q.options.split('|');
-        const correctOpt = q.correct_answer.trim();
+        const correctAnswers = q.correct_answer.split(',').map(a => a.trim());
         const total = data.total_submitted;
         
         options.forEach(opt => {
             let optVal = opt.split(':')[0].trim();
             let count = data.stats[optVal] || 0;
             let pct = total > 0 ? Math.round((count / total) * 100) : 0;
-            let isCorrect = (optVal === correctOpt);
+            let isCorrect = correctAnswers.includes(optVal);
             
             let fillClass = isCorrect ? 'correct' : 'incorrect';
-            let labelSuffix = isCorrect ? ' (Correct)' : '';
+            let labelSuffix = isCorrect ? ' ✓' : '';
             
             html += `
                 <div class="bar-container">
