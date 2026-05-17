@@ -791,7 +791,30 @@
                 text-align: center;
             }
             .control-row {
-                grid-template-columns: 1fr;
+                display: block;
+            }
+            
+            .control-row .control-group {
+                margin-bottom: 16px;
+            }
+            
+            /* Dropdown takes full width on top */
+            .control-row .control-group:first-child {
+                width: 100%;
+                display: block;
+            }
+            
+            /* Time inputs side by side below */
+            .control-row .control-group:nth-child(2),
+            .control-row .control-group:nth-child(3) {
+                display: inline-block;
+                width: calc(50% - 8px);
+                vertical-align: top;
+                margin-bottom: 0;
+            }
+            
+            .control-row .control-group:nth-child(2) {
+                margin-right: 16px;
             }
             .action-buttons {
                 flex-direction: column;

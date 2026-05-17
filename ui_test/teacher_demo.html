@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse Check - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            line-height: 1.6;
+        }
+
+        /* View Toggle */
+        .view-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: 2px solid #CBD5E1;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.3s;
+            margin: 0 4px;
+        }
+
+        .toggle-btn.active {
+            background: #3B82F6;
+            color: white;
+            border-color: #3B82F6;
+        }
+
+        .toggle-btn:hover:not(.active) {
+            background: #F1F5F9;
+        }
+
+        /* View Badge */
+        .view-badge {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 999;
+            background: #1E293B;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Teacher Dashboard */
+        #teacher-dashboard {
+            display: block;
+        }
+
+        /* Summary Ribbon */
+        .summary-ribbon {
+            background: #1E293B;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .ribbon-left {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .ribbon-center {
+            font-size: 24px;
+            font-weight: bold;
+            color: #F59E0B;
+        }
+
+        .ribbon-right {
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .ribbon-right.all-submitted {
+            background: #10B981;
+            padding: 8px 16px;
+            border-radius: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        .ribbon-right strong {
+            color: #10B981;
+            font-size: 24px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .left-panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .right-panel {
+            width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Question Display */
+        .question-display {
+            background: #F1F5F9;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .question-type {
+            font-size: 14px;
+            color: #64748B;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .question-prompt {
+            font-size: 16px;
+            color: #1E293B;
+            line-height: 1.5;
+        }
+
+        /* Bar Chart */
+        .bar-container {
+            margin: 10px 0;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .bar-track {
+            background: #E2E8F0;
+            width: 100%;
+            border-radius: 4px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .bar-fill.correct {
+            background: #10B981;
+        }
+
+        .bar-fill.incorrect {
+            background: #EF4444;
+        }
+
+        /* Student Cards */
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .student-card {
+            border-radius: 6px;
+            padding: 12px;
+            border: 2px solid transparent;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .student-card.correct {
+            background: #ECFDF5;
+            border-color: #10B981;
+            color: #065F46;
+        }
+
+        .student-card.incorrect {
+            background: #FEF2F2;
+            border-color: #EF4444;
+            color: #991B1B;
+        }
+
+        .student-card.disconnected {
+            background: #F1F5F9;
+            border-style: dashed;
+            border-color: #CBD5E1;
+            color: #94A3B8;
+        }
+
+        .student-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .student-answer {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .student-card:hover .remove-btn {
+            opacity: 1;
+        }
+
+        .remove-btn:hover {
+            background: rgba(0,0,0,0.2);
+        }
+
+        /* Controls */
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 4px;
+        }
+
+        .btn-primary {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563EB;
+        }
+
+        .btn-success {
+            background: #10B981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #D97706;
+        }
+
+        .btn-danger {
+            background: #EF4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+
+        /* Demo Controls */
+        .demo-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 300px;
+            z-index: 998;
+            display: none;
+            transition: all 0.3s;
+        }
+
+        .demo-controls.visible {
+            display: block;
+        }
+
+        .demo-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 997;
+            transition: all 0.2s;
+        }
+
+        .demo-toggle-btn:hover {
+            background: #2563EB;
+            transform: translateY(-2px);
+        }
+
+        .demo-toggle-btn.hidden {
+            display: none;
+        }
+
+        .demo-controls h4 {
+            margin-bottom: 16px;
+            color: #1E293B;
+        }
+
+        .demo-controls .btn {
+            width: 100%;
+            margin: 4px 0;
+        }
+
+        .demo-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .demo-section:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .demo-section p {
+            font-size: 12px;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+
+        /* Student Viewport */
+        #student-viewport {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .student-header {
+            background: #1E293B;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .room-badge {
+            background: #3B82F6;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .connection-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10B981;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #student-content {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .state-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* MCQ Options */
+        .mcq-options {
+            margin: 20px 0;
+        }
+
+        .mcq-option {
+            display: block;
+            padding: 16px;
+            margin: 12px 0;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .mcq-option:hover {
+            border-color: #3B82F6;
+            background: #F0F9FF;
+        }
+
+        .mcq-option.selected {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+        }
+
+        .mcq-option input[type="radio"] {
+            margin-right: 12px;
+        }
+
+        .mcq-option span {
+            font-size: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .right-panel {
+                width: 100%;
+            }
+
+            .student-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- View Toggle -->
+    <div class="view-toggle">
+        <button class="toggle-btn active" onclick="switchView('teacher')">
+            👨‍🏫 Teacher View
+        </button>
+        <button class="toggle-btn" onclick="switchView('student')">
+            👨‍🎓 Student View
+        </button>
+    </div>
+
+    <!-- View Badge -->
+    <div class="view-badge">
+        Currently viewing: <strong id="view-label">Teacher Dashboard</strong>
+    </div>
+
+    <!-- Teacher Dashboard -->
+    <div id="teacher-dashboard">
+        <!-- Summary Ribbon -->
+        <div class="summary-ribbon">
+            <div class="ribbon-left" id="ribbon-left">
+                [Q5] Question 5: What is the most effective approach...
+            </div>
+            <div class="ribbon-center" id="ribbon-center">
+                LOCKED
+            </div>
+            <div class="ribbon-right" id="ribbon-right">
+                <span id="ribbon-sub">24</span> / <span id="ribbon-tot">24</span> Submitted
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="control-group" style="flex: 1; min-width: 200px;">
+                    <label>Select Question:</label>
+                    <select id="question-select" onchange="selectQuestion()">
+                        <option value="q_auto_05">Q5: What is the most effective approach...</option>
+                        <option value="q_auto_06">Q6: A real estate agency wants to build...</option>
+                        <option value="q_auto_11">Q11: Increased automation in the workplace...</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button class="btn btn-primary" onclick="prepareQuestion()">Prepare Question</button>
+                        <button class="btn btn-success" onclick="startQuiz()">Start Quiz Now</button>
+                        <button class="btn btn-warning" onclick="lockSubmissions()">Lock Submissions</button>
+                        <button class="btn btn-danger" onclick="resetRoom()">Reset Room</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel: Distribution -->
+            <div class="left-panel">
+                <div id="distribution-view">
+                    <!-- Question Display -->
+                    <div class="question-display">
+                        <div class="question-type">[MCQ] CURRENT QUESTION</div>
+                        <div class="question-prompt" id="question-prompt">
+                            Question 5: What is the most effective approach to ensuring that automation benefits society as a whole?
+                        </div>
+                    </div>
+
+                    <h3>Response Distribution - MCQ</h3>
+                    <div id="distribution-bars">
+                        <!-- Bars will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Student Roster -->
+            <div class="right-panel">
+                <h3 style="margin-bottom: 16px;">Student Roster (<span id="student-count">24</span>)</h3>
+                <div class="student-grid" id="student-grid">
+                    <!-- Student cards will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Viewport -->
+    <div id="student-viewport">
+        <!-- Student Header -->
+        <div class="student-header">
+            <div class="header-left">
+                <strong>Demo Student</strong>
+                <span class="room-badge">Room: DEMO</span>
+            </div>
+            <div class="header-right">
+                <span class="connection-dot"></span>
+                <span>Connected</span>
+            </div>
+        </div>
+
+        <!-- Student Content -->
+        <div id="student-content">
+            <!-- Content will be rendered based on state -->
+        </div>
+    </div>
+
+    <!-- Demo Toggle Button -->
+    <button class="demo-toggle-btn" onclick="toggleDemoControls()">🎮 Demo Controls</button>
+
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0;">Demo Controls</h4>
+            <button onclick="toggleDemoControls()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748B; line-height: 1;" title="Close">×</button>
+        </div>
+        
+        <div class="demo-section">
+            <p>Student Management:</p>
+            <button class="btn btn-primary" onclick="addRandomStudent()">➕ Add Random Student</button>
+            <button class="btn btn-danger" onclick="removeRandomStudent()">➖ Remove Random Student</button>
+            <button class="btn btn-success" onclick="simulateSubmission()">⚡ Simulate All Submit</button>
+        </div>
+
+        <div class="demo-section">
+            <p>Force State:</p>
+            <button class="btn" style="background: #64748B; color: white; font-size: 12px;" onclick="forceState('WAITING')">Set WAITING</button>
+            <button class="btn" style="background: #3B82F6; color: white; font-size: 12px;" onclick="forceState('ACTIVE')">Set ACTIVE</button>
+            <button class="btn" style="background: #10B981; color: white; font-size: 12px;" onclick="forceState('LOCKED')">Set LOCKED</button>
+        </div>
+
+        <button class="btn btn-danger" onclick="resetDemo()">🔄 Reset Demo</button>
+    </div>
+
+    <script>
+        // Mock Data
+        const mockQuestions = [
+            {
+                question_id: 'q_auto_05',
+                type: 'MCQ',
+                prompt: 'Question 5: What is the most effective approach to ensuring that automation benefits society as a whole?',
+                options: 'A: Allow market forces to guide the adoption of automation, trusting that economic growth will naturally lead to broader societal benefits.|B: Prioritise technological advancement and productivity gains, with social concerns addressed only after implementation.|C: Encourage collaboration between policymakers, educators, and businesses to promote inclusivity, skill development, and sustainability.|D: Limit the use of automation to industries with low employment rates.',
+                correct_answer: 'C',
+                video_url: 'https://youtu.be/v6fNh1AxZ-M'
+            },
+            {
+                question_id: 'q_auto_06',
+                type: 'MCQ',
+                prompt: 'Question 6: A real estate agency wants to build a model to predict whether a house is likely to be sold within 60 days based on features such as its price, location score, number of bedrooms, and age. Which regression model is most appropriate, and why?',
+                options: 'A: Linear regression, because it can handle multiple input features and will predict the number of days it takes to sell the house.|B: Polynomial regression, because housing data often involves curved relationships between price and location.|C: Logistic regression, because the goal is to classify whether a house will be sold within a specific time frame.|D: Polynomial regression, because the number of bedrooms and age of the house are discrete variables requiring non-linear models.',
+                correct_answer: 'C',
+                video_url: 'https://youtu.be/LDdrLWiJJxc'
+            },
+            {
+                question_id: 'q_auto_11',
+                type: 'MCQ',
+                prompt: 'Question 11: Increased automation in the workplace typically leads to which of the following coordinated sets of socioeconomic impacts?',
+                options: 'A: Greater job satisfaction for manual labourers and increased systemic access to public transport systems.|B: Reduced demand for certain low-skilled jobs, improved safety in high-risk environments, lowered industrial labor costs, and a heightened necessity for worker reskilling.|C: Decreased energy consumption from all modern industries paired with highly diversified cultural representation in media.|D: Total elimination of operational workplace vulnerabilities without any shifts in labor requirements or retraining costs.',
+                correct_answer: 'B',
+                video_url: 'https://youtu.be/LDdrLWiJJxc'
+            }
+        ];
+
+        let mockStudents = [
+            { name: 'Alice Chen', answer: 'C', is_correct: true, connected: true },
+            { name: 'Bob Martinez', answer: 'A', is_correct: false, connected: true },
+            { name: 'Carol Wang', answer: 'C', is_correct: true, connected: true },
+            { name: 'David Kim', answer: 'B', is_correct: false, connected: true },
+            { name: 'Emma Johnson', answer: 'C', is_correct: true, connected: false },
+            { name: 'Frank Lee', answer: 'C', is_correct: true, connected: true },
+            { name: 'Grace Patel', answer: 'A', is_correct: false, connected: true },
+            { name: 'Henry Zhang', answer: 'C', is_correct: true, connected: true },
+            { name: 'Iris Rodriguez', answer: 'D', is_correct: false, connected: true },
+            { name: 'Jack Wilson', answer: 'C', is_correct: true, connected: true },
+            { name: 'Kate Nguyen', answer: 'C', is_correct: true, connected: true },
+            { name: 'Liam Brown', answer: 'B', is_correct: false, connected: true },
+            { name: 'Maya Singh', answer: 'C', is_correct: true, connected: true },
+            { name: 'Noah Davis', answer: 'C', is_correct: true, connected: true },
+            { name: 'Olivia Taylor', answer: 'A', is_correct: false, connected: true },
+            { name: 'Peter Anderson', answer: 'C', is_correct: true, connected: true },
+            { name: 'Quinn Murphy', answer: 'C', is_correct: true, connected: true },
+            { name: 'Rachel Cohen', answer: 'D', is_correct: false, connected: true },
+            { name: 'Sam Thompson', answer: 'C', is_correct: true, connected: true },
+            { name: 'Tara Williams', answer: 'C', is_correct: true, connected: true },
+            { name: 'Uma Sharma', answer: 'B', is_correct: false, connected: true },
+            { name: 'Victor Garcia', answer: 'C', is_correct: true, connected: true },
+            { name: 'Wendy Liu', answer: 'A', is_correct: false, connected: true },
+            { name: 'Xavier Jones', answer: 'C', is_correct: true, connected: false }
+        ];
+
+        let mockRoomState = {
+            state: 'LOCKED',
+            current_q: 'q_auto_05',
+            show_responses: true
+        };
+
+        let currentView = 'teacher';
+        let studentState = 'LOCKED';
+        let demoStudentAnswer = null;
+
+        // Initialize
+        updateTeacherUI();
+
+        // View Switching
+        function switchView(view) {
+            currentView = view;
+            
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (view === 'teacher') {
+                showTeacherView();
+            } else {
+                showStudentView();
+            }
+        }
+
+        function showTeacherView() {
+            document.getElementById('teacher-dashboard').style.display = 'block';
+            document.getElementById('student-viewport').style.display = 'none';
+            document.querySelector('.demo-toggle-btn').classList.remove('hidden');
+            document.getElementById('view-label').textContent = 'Teacher Dashboard';
+        }
+
+        function showStudentView() {
+            document.getElementById('teacher-dashboard').style.display = 'none';
+            document.getElementById('student-viewport').style.display = 'block';
+            document.querySelector('.demo-controls').classList.remove('visible');
+            document.querySelector('.demo-toggle-btn').classList.add('hidden');
+            document.getElementById('view-label').textContent = 'Student Experience';
+            renderStudentState(studentState);
+        }
+
+        function toggleDemoControls() {
+            const controls = document.querySelector('.demo-controls');
+            controls.classList.toggle('visible');
+        }
+
+        // Teacher UI Updates
+        function updateTeacherUI() {
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            
+            // Update ribbon
+            document.getElementById('ribbon-left').textContent = `[${currentQ.question_id.toUpperCase()}] ${currentQ.prompt.substring(0, 50)}...`;
+            document.getElementById('ribbon-center').textContent = mockRoomState.state;
+            document.getElementById('ribbon-sub').textContent = mockStudents.length;
+            document.getElementById('ribbon-tot').textContent = mockStudents.length;
+            
+            // Check if all submitted
+            const ribbonRight = document.getElementById('ribbon-right');
+            if (mockStudents.length >= 24 && mockRoomState.state === 'ACTIVE') {
+                ribbonRight.classList.add('all-submitted');
+                ribbonRight.innerHTML = '✓ ALL SUBMITTED - Ready to lock';
+            } else {
+                ribbonRight.classList.remove('all-submitted');
+                ribbonRight.innerHTML = `<span id="ribbon-sub">${mockStudents.length}</span> / <span id="ribbon-tot">${mockStudents.length}</span> Submitted`;
+            }
+            
+            // Update question display
+            document.getElementById('question-prompt').textContent = currentQ.prompt;
+            
+            // Update distribution
+            renderDistribution();
+            
+            // Update student roster
+            renderStudentRoster();
+            
+            // Update student count
+            document.getElementById('student-count').textContent = mockStudents.length;
+        }
+
+        function renderDistribution() {
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            const stats = calculateDistribution();
+            const total = mockStudents.length;
+            
+            let html = '';
+            const options = currentQ.options.split('|');
+            
+            options.forEach(opt => {
+                const optVal = opt.split(':')[0].trim();
+                const count = stats[optVal] || 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const isCorrect = optVal === currentQ.correct_answer;
+                const fillClass = isCorrect ? 'correct' : 'incorrect';
+                const labelSuffix = isCorrect ? ' ✓' : '';
+                
+                html += `
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>${opt}${labelSuffix}</span>
+                            <span><strong>${pct}%</strong> (${count}/${total})</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill ${fillClass}" style="width: ${pct}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('distribution-bars').innerHTML = html;
+        }
+
+        function calculateDistribution() {
+            const stats = {};
+            mockStudents.forEach(student => {
+                stats[student.answer] = (stats[student.answer] || 0) + 1;
+            });
+            return stats;
+        }
+
+        function renderStudentRoster() {
+            const grid = document.getElementById('student-grid');
+            let html = '';
+            
+            mockStudents.forEach((student, index) => {
+                const cardClass = student.connected 
+                    ? (student.is_correct ? 'correct' : 'incorrect')
+                    : 'disconnected';
+                
+                html += `
+                    <div class="student-card ${cardClass}">
+                        <button class="remove-btn" onclick="removeStudent(${index})">×</button>
+                        <div class="student-name">${student.name}</div>
+                        <div class="student-answer">Answer: ${student.answer}</div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        // Student UI Rendering
+        function renderStudentState(state) {
+            const viewport = document.getElementById('student-content');
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            
+            if (state === 'WAITING') {
+                if (currentQ && currentQ.video_url) {
+                    const videoId = extractYouTubeId(currentQ.video_url);
+                    viewport.innerHTML = `
+                        <div class="state-card">
+                            <h3 style="margin-bottom: 20px; color: #64748B;">State: WAITING</h3>
+                            <div class="video-container">
+                                <iframe 
+                                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                            <p style="text-align: center; color: #64748B; font-size: 16px;">
+                                The question will appear when the teacher starts the quiz
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    viewport.innerHTML = `
+                        <div class="state-card" style="text-align: center; padding: 60px 40px;">
+                            <h2 style="font-size: 48px; margin-bottom: 20px;">👀</h2>
+                            <h3 style="color: #1E293B; margin-bottom: 16px;">Eyes on Teacher</h3>
+                            <p style="color: #64748B; font-size: 16px;">
+                                Listen to the presentation and engage with the instructor.
+                            </p>
+                        </div>
+                    `;
+                }
+            } else if (state === 'ACTIVE') {
+                renderActiveState(viewport, currentQ);
+            } else if (state === 'LOCKED') {
+                renderLockedState(viewport);
+            }
+        }
+
+        function renderActiveState(viewport, question) {
+            const options = question.options.split('|');
+            let optionsHTML = options.map(opt => {
+                const optVal = opt.split(':')[0].trim();
+                return `
+                    <label class="mcq-option" onclick="selectStudentAnswer('${optVal}')">
+                        <input type="radio" name="demo-answer" value="${optVal}">
+                        <span>${opt}</span>
+                    </label>
+                `;
+            }).join('');
+            
+            viewport.innerHTML = `
+                <div class="state-card">
+                    <h3 style="margin-bottom: 20px; color: #64748B;">State: ACTIVE</h3>
+                    <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="font-size: 16px; line-height: 1.6; color: #1E293B;">${question.prompt}</p>
+                    </div>
+                    <div class="mcq-options">
+                        ${optionsHTML}
+                    </div>
+                    <button id="student-submit-btn" class="btn btn-primary" onclick="submitStudentAnswer()" style="width: 100%; margin-top: 20px;">
+                        Submit Answer
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderLockedState(viewport) {
+            let html = `
+                <div class="state-card" style="text-align: center; padding: 40px;">
+                    <h2 style="font-size: 36px; margin-bottom: 16px;">⏱️</h2>
+                    <h3 style="color: #1E293B; margin-bottom: 12px;">Time's Up</h3>
+                    <p style="color: #64748B; font-size: 16px;">
+                        Awaiting feedback from teacher...
+                    </p>
+                </div>
+            `;
+            
+            if (mockRoomState.show_responses) {
+                html += `
+                    <div style="background: white; margin-top: 30px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 20px; color: #1E293B;">Response Distribution</h3>
+                        ${renderStudentDistribution()}
+                    </div>
+                `;
+            }
+            
+            viewport.innerHTML = html;
+        }
+
+        function renderStudentDistribution() {
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            const stats = calculateDistribution();
+            const total = mockStudents.length;
+            
+            let html = '';
+            const options = currentQ.options.split('|');
+            
+            options.forEach(opt => {
+                const optVal = opt.split(':')[0].trim();
+                const count = stats[optVal] || 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const isCorrect = optVal === currentQ.correct_answer;
+                const fillColor = isCorrect ? '#10B981' : '#EF4444';
+                const labelSuffix = isCorrect ? ' ✓' : '';
+                
+                html += `
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>${opt}${labelSuffix}</span>
+                            <span><strong>${pct}%</strong> (${count}/${total})</span>
+                        </div>
+                        <div class="bar-track">
+                            <div style="width: ${pct}%; height: 100%; border-radius: 4px; background: ${fillColor};"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+
+        function extractYouTubeId(url) {
+            if (url.includes('youtu.be/')) {
+                return url.split('youtu.be/')[1].split('?')[0];
+            }
+            if (url.includes('watch?v=')) {
+                return url.split('watch?v=')[1].split('&')[0];
+            }
+            if (url.includes('embed/')) {
+                return url.split('embed/')[1].split('?')[0];
+            }
+            return '';
+        }
+
+        // Student Interactions
+        function selectStudentAnswer(option) {
+            demoStudentAnswer = option;
+            document.querySelectorAll('.mcq-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            event.target.closest('.mcq-option').classList.add('selected');
+        }
+
+        function submitStudentAnswer() {
+            if (!demoStudentAnswer) {
+                alert('Please select an answer');
+                return;
+            }
+            
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            const isCorrect = demoStudentAnswer === currentQ.correct_answer;
+            
+            // Remove existing demo student if present
+            mockStudents = mockStudents.filter(s => s.name !== 'Demo Student');
+            
+            // Add new demo student
+            mockStudents.push({
+                name: 'Demo Student',
+                answer: demoStudentAnswer,
+                is_correct: isCorrect,
+                connected: true
+            });
+            
+            alert(`Answer "${demoStudentAnswer}" submitted!`);
+            
+            document.getElementById('student-submit-btn').disabled = true;
+            document.getElementById('student-submit-btn').textContent = '✅ Answer Submitted';
+            
+            updateTeacherUI();
+        }
+
+        // Teacher Controls
+        function selectQuestion() {
+            const select = document.getElementById('question-select');
+            mockRoomState.current_q = select.value;
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState(studentState);
+            }
+        }
+
+        function prepareQuestion() {
+            mockRoomState.state = 'WAITING';
+            mockRoomState.show_responses = false;
+            studentState = 'WAITING';
+            demoStudentAnswer = null;
+            
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState('WAITING');
+            }
+            
+            console.log('Question prepared');
+        }
+
+        function startQuiz() {
+            mockRoomState.state = 'ACTIVE';
+            studentState = 'ACTIVE';
+            
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState('ACTIVE');
+            }
+            
+            console.log('Quiz started');
+        }
+
+        function lockSubmissions() {
+            mockRoomState.state = 'LOCKED';
+            mockRoomState.show_responses = true;
+            studentState = 'LOCKED';
+            
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState('LOCKED');
+            }
+            
+            console.log('Submissions locked');
+        }
+
+        function resetRoom() {
+            mockRoomState.state = 'WAITING';
+            mockRoomState.show_responses = false;
+            studentState = 'WAITING';
+            demoStudentAnswer = null;
+            
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState('WAITING');
+            }
+            
+            console.log('Room reset');
+        }
+
+        // Demo Controls
+        function addRandomStudent() {
+            const names = ['Zoe Parker', 'Alex Turner', 'Jordan Smith', 'Casey Lee', 'Morgan Davis', 'Riley Brown', 'Taylor White', 'Jamie Green'];
+            const options = ['A', 'B', 'C', 'D'];
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            
+            const randomName = names[Math.floor(Math.random() * names.length)] + ' ' + Math.floor(Math.random() * 100);
+            const randomAnswer = options[Math.floor(Math.random() * options.length)];
+            const isCorrect = randomAnswer === currentQ.correct_answer;
+            
+            mockStudents.push({
+                name: randomName,
+                answer: randomAnswer,
+                is_correct: isCorrect,
+                connected: true
+            });
+            
+            updateTeacherUI();
+        }
+
+        function removeRandomStudent() {
+            if (mockStudents.length > 0) {
+                const randomIndex = Math.floor(Math.random() * mockStudents.length);
+                mockStudents.splice(randomIndex, 1);
+                updateTeacherUI();
+            }
+        }
+
+        function removeStudent(index) {
+            mockStudents.splice(index, 1);
+            updateTeacherUI();
+        }
+
+        function simulateSubmission() {
+            // Generate 24 random students
+            mockStudents = [];
+            const names = [
+                'Alice Chen', 'Bob Martinez', 'Carol Wang', 'David Kim',
+                'Emma Johnson', 'Frank Lee', 'Grace Patel', 'Henry Zhang',
+                'Iris Rodriguez', 'Jack Wilson', 'Kate Nguyen', 'Liam Brown',
+                'Maya Singh', 'Noah Davis', 'Olivia Taylor', 'Peter Anderson',
+                'Quinn Murphy', 'Rachel Cohen', 'Sam Thompson', 'Tara Williams',
+                'Uma Sharma', 'Victor Garcia', 'Wendy Liu', 'Xavier Jones'
+            ];
+            
+            const currentQ = mockQuestions.find(q => q.question_id === mockRoomState.current_q);
+            const options = ['A', 'B', 'C', 'D'];
+            
+            names.forEach(name => {
+                // 65% chance of correct answer
+                let answer;
+                if (Math.random() < 0.65) {
+                    answer = currentQ.correct_answer;
+                } else {
+                    const wrongOptions = options.filter(o => o !== currentQ.correct_answer);
+                    answer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+                }
+                
+                mockStudents.push({
+                    name: name,
+                    answer: answer,
+                    is_correct: answer === currentQ.correct_answer,
+                    connected: Math.random() > 0.1 // 90% connected
+                });
+            });
+            
+            updateTeacherUI();
+        }
+
+        function forceState(state) {
+            mockRoomState.state = state;
+            studentState = state;
+            
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState(state);
+            }
+        }
+
+        function resetDemo() {
+            mockRoomState.state = 'WAITING';
+            mockRoomState.current_q = 'q_auto_05';
+            mockRoomState.show_responses = false;
+            mockStudents = [];
+            studentState = 'WAITING';
+            demoStudentAnswer = null;
+            
+            document.getElementById('question-select').value = 'q_auto_05';
+            
+            updateTeacherUI();
+            if (currentView === 'student') {
+                renderStudentState('WAITING');
+            }
+            
+            console.log('Demo reset');
+        }
+    </script>
+</body>
+</html>
