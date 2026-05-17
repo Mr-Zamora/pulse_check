@@ -238,6 +238,8 @@
             font-size: 16px;
             font-family: 'Courier New', monospace;
             margin-bottom: 20px;
+            resize: vertical;
+            min-height: 100px;
         }
 
         .short-answer-input:focus {

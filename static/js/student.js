@@ -170,7 +170,7 @@ function showActiveState(qData) {
             `;
         } else if (qData.type === 'SHORT') {
             formHTML = `
-                <input type="text" id="short-answer" class="short-answer-input" placeholder="Type your answer here..." autocomplete="off">
+                <textarea id="short-answer" class="short-answer-input" placeholder="Type your answer here..." autocomplete="off" rows="4"></textarea>
                 <button class="btn-primary" onclick="submitAnswer('SHORT')">Submit Answer</button>
             `;
         }
