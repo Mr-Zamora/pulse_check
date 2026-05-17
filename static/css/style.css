@@ -791,31 +791,21 @@
                 text-align: center;
             }
             .control-row {
-                display: block;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
             }
             
             .control-row .control-group {
-                margin-bottom: 16px;
-            }
-            
-            /* Dropdown takes full width on top */
-            .control-row .control-group:first-child {
                 width: 100%;
-                display: block;
-            }
-            
-            /* Time inputs side by side below */
-            .control-row .control-group:nth-child(2),
-            .control-row .control-group:nth-child(3) {
-                display: inline-block;
-                width: calc(50% - 8px);
-                vertical-align: top;
                 margin-bottom: 0;
             }
             
-            .control-row .control-group:nth-child(2) {
-                margin-right: 16px;
+            .control-row .control-group select,
+            .control-row .control-group input[type="number"] {
+                width: 100%;
             }
+            
             .action-buttons {
                 flex-direction: column;
             }
