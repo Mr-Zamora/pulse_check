@@ -1,6 +1,7 @@
 const POLL_INTERVAL = 1000;
 let currentState = null;
 let currentQuestionId = null;
+let currentQuestionData = null;
 let hasSubmitted = false;
 let timeRemaining = 0;
 let showResponses = false;
@@ -99,7 +100,10 @@ function handleStateUpdate(data) {
             attemptAutoSubmit(data);
         } else {
             currentState = data.room_state;
-            if (data.question_data) hasQuestionData = true;
+            if (data.question_data) {
+                hasQuestionData = true;
+                currentQuestionData = data.question_data;
+            }
             renderState(data);
         }
     }
@@ -133,6 +137,42 @@ function renderState(data) {
 // --- Renderers ---
 
 function showWaitingState() {
+    // Check if current question has a video URL
+    const videoUrl = currentQuestionData?.video_url;
+    
+    if (videoUrl && videoUrl.trim() !== '') {
+        // Extract YouTube video ID from URL
+        const videoId = extractYouTubeId(videoUrl);
+        
+        if (videoId) {
+            // Show YouTube embed
+            viewport.innerHTML = `
+                <h3 style="margin-bottom: 20px; color: #64748B;">State: WAITING</h3>
+                <div class="state-card" style="background: #F8FAFC; border: 2px solid #3B82F6; padding: 20px;">
+                    <h3 style="color: #3B82F6; margin-bottom: 16px;">🎥 Introduction Video</h3>
+                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin-bottom: 16px;">
+                        <iframe 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                            src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&modestbranding=1"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    <p style="color: #64748B; text-align: center;">The question will appear when the teacher starts the quiz.</p>
+                </div>
+            `;
+        } else {
+            // Invalid video URL, fallback to Eyes on Teacher
+            showEyesOnTeacher();
+        }
+    } else {
+        // No video URL, show Eyes on Teacher
+        showEyesOnTeacher();
+    }
+}
+
+function showEyesOnTeacher() {
     viewport.innerHTML = `
         <h3 style="margin-bottom: 20px; color: #64748B;">State: WAITING</h3>
         <div class="state-card waiting">
@@ -140,6 +180,25 @@ function showWaitingState() {
             <p>Listen to the presentation and engage with the instructor.</p>
         </div>
     `;
+}
+
+function extractYouTubeId(url) {
+    // Handle various YouTube URL formats:
+    // https://www.youtube.com/watch?v=VIDEO_ID
+    // https://youtu.be/VIDEO_ID
+    // https://www.youtube.com/embed/VIDEO_ID
+    
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /^([a-zA-Z0-9_-]{11})$/ // Just the ID itself
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    
+    return null;
 }
 
 function showLockedState() {
