@@ -1,0 +1,10 @@
+# Admin credentials for the admin dashboard
+# Copy this file to admin.py and change the credentials
+
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "changeme"  # CHANGE THIS!
+SECRET_KEY = "dev-secret-key-change-in-production"  # CHANGE THIS!
+
+# To generate a secure secret key, run:
+# import secrets
+# print(secrets.token_hex(32))

@@ -90,13 +90,31 @@ cd pulse_check
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Run
+# 3. Set up admin credentials (IMPORTANT!)
+# Copy the example file and edit with your own credentials
+cp admin.py.example admin.py
+# Edit admin.py and change ADMIN_USERNAME, ADMIN_PASSWORD, and SECRET_KEY
+
+# 4. Run
 python app.py
 ```
 
 Visit `http://localhost:5000`
 
 > The SQLite database and CSV files are created automatically on first run.
+
+### ⚠️ Admin Credentials Setup
+
+The admin dashboard requires credentials stored in `admin.py`:
+
+1. Copy `admin.py.example` to `admin.py`
+2. Edit `admin.py` and change:
+   - `ADMIN_USERNAME` (default: "admin")
+   - `ADMIN_PASSWORD` (default: "changeme")
+   - `SECRET_KEY` (generate with `import secrets; print(secrets.token_hex(32))`)
+3. **Never commit `admin.py` to Git** — it's in `.gitignore` for security
+
+Access the admin dashboard at `http://localhost:5000/admin/login`
 
 ---
 

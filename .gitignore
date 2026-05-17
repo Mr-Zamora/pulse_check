@@ -21,6 +21,9 @@ database/classroom_pulse.db
 # Student response data (privacy — do not commit)
 database/responses.csv
 
+# Admin credentials (security — do not commit)
+admin.py
+
 # Flask session / instance files
 instance/
 *.sqlite3

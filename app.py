@@ -6,8 +6,18 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from configuration import csv_lock, get_db, init_db, DISCONNECT_TIMEOUT
 
-app = Flask(__name__)
-app.secret_key = 'MY_SECRET_KEY_IS_A_LONG_RANDOM_STRING'
+# Admin credentials - stored in admin.py (NOT committed to Git)
+# Copy admin.py.example to admin.py and set your own credentials
+try:
+    from admin import ADMIN_USERNAME, ADMIN_PASSWORD, SECRET_KEY
+    app = Flask(__name__)
+    app.secret_key = SECRET_KEY
+except ImportError:
+    print("WARNING: admin.py not found! Copy admin.py.example to admin.py and set credentials.")
+    app = Flask(__name__)
+    app.secret_key = 'MY_SECRET_KEY_IS_A_LONG_RANDOM_STRING'
+    ADMIN_USERNAME = "admin"
+    ADMIN_PASSWORD = "changeme"
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
