@@ -126,8 +126,18 @@ def set_room_state(room_id, **kwargs):
 
 
 def touch_student(room_id, student_name):
-    """Record or refresh a student's last_seen timestamp."""
+    """Record or refresh a student's last_seen timestamp. Returns False if student was kicked."""
     db = get_db()
+    # Check if student was kicked (last_seen = -1)
+    existing = db.execute(
+        "SELECT last_seen FROM student_last_seen WHERE room_id = ? AND student_name = ?",
+        (room_id, student_name)
+    ).fetchone()
+    
+    if existing and existing['last_seen'] == -1:
+        db.close()
+        return False  # Student was kicked
+    
     db.execute("""
         INSERT INTO student_last_seen (room_id, student_name, last_seen)
         VALUES (?, ?, ?)
@@ -135,13 +145,14 @@ def touch_student(room_id, student_name):
     """, (room_id, student_name, time.time()))
     db.commit()
     db.close()
+    return True
 
 
 def get_student_states(room_id):
     """Return dict of {student_name: {connection, state}} for a room."""
     db = get_db()
     rows = db.execute(
-        "SELECT student_name, last_seen FROM student_last_seen WHERE room_id = ?",
+        "SELECT student_name, last_seen FROM student_last_seen WHERE room_id = ? AND last_seen != -1",
         (room_id,)
     ).fetchall()
     db.close()
@@ -172,6 +183,17 @@ def join():
     session['student_name'] = student_name
     session['room_id'] = room_id
     init_room(room_id)
+    
+    # Clear any kicked flag if student is rejoining
+    db = get_db()
+    db.execute("""
+        UPDATE student_last_seen 
+        SET last_seen = ? 
+        WHERE room_id = ? AND student_name = ? AND last_seen = -1
+    """, (time.time(), room_id, student_name))
+    db.commit()
+    db.close()
+    
     return redirect(url_for('room', room_id=room_id))
 
 
@@ -213,7 +235,13 @@ def room_status():
             student_name = session['student_name']
 
     if student_name:
-        touch_student(room_id, student_name)
+        if not touch_student(room_id, student_name):
+            # Student was kicked
+            return jsonify({
+                "status": "error",
+                "error_type": "student_removed",
+                "message": "You have been removed from this room by the teacher."
+            }), 403
 
     state = get_room_state(room_id)
 
@@ -304,6 +332,81 @@ def teacher_control():
 
     new_state = get_room_state(room_id)['state']
     return jsonify({"status": "success", "message": f"Action {action} processed", "new_state": new_state})
+
+
+@app.route('/api/teacher/delete_student', methods=['POST'])
+def delete_student():
+    try:
+        data = request.get_json()
+        room_id = data.get('room_id')
+        student_name = data.get('student_name')
+        
+        if not room_id or not student_name:
+            return jsonify({"status": "error", "message": "Missing room_id or student_name"}), 400
+        
+        # Mark student as kicked by setting last_seen to -1 (special value)
+        db = get_db()
+        db.execute("UPDATE student_last_seen SET last_seen = -1 WHERE room_id = ? AND student_name = ?", 
+                   (room_id, student_name))
+        db.commit()
+        db.close()
+        
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print(f"Error deleting student: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/teacher/delete_response', methods=['POST'])
+def delete_response():
+    try:
+        data = request.get_json()
+        room_id = data.get('room_id')
+        question_id = data.get('question_id')
+        normalized_answer = data.get('normalized_answer')
+        
+        if not room_id or not question_id or normalized_answer is None:
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+        
+        # Mark all matching responses as deleted by updating the CSV
+        responses = read_responses(room_id, question_id)
+        updated_responses = []
+        deleted_count = 0
+        
+        for r in responses:
+            if normalize_answer(r['answer']) == normalized_answer:
+                r['is_correct'] = 'DELETED'  # Use is_correct field to mark as deleted
+                deleted_count += 1
+            updated_responses.append(r)
+        
+        # Rewrite the entire responses CSV
+        if deleted_count > 0:
+            all_responses = read_responses()  # Get all responses
+            # Replace the ones we updated
+            final_responses = []
+            for r in all_responses:
+                if r.get('room_id') == room_id and r.get('question_id') == question_id:
+                    # Use updated version
+                    matching = next((ur for ur in updated_responses if ur['student_name'] == r['student_name']), None)
+                    if matching:
+                        final_responses.append(matching)
+                    else:
+                        final_responses.append(r)
+                else:
+                    final_responses.append(r)
+            
+            # Write back to CSV
+            fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
+            with csv_lock:
+                with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(final_responses)
+        
+        return jsonify({"status": "success", "deleted_count": deleted_count})
+    except Exception as e:
+        print(f"Error deleting response: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/api/teacher/toggle_responses', methods=['POST'])
@@ -430,6 +533,9 @@ def get_responses():
         if target_q:
             if target_q['type'] == 'MCQ':
                 for r in responses:
+                    # Skip deleted responses
+                    if r.get('is_correct') == 'DELETED':
+                        continue
                     ans = r['answer']
                     # Handle multi-select: split by comma and count each option
                     if ',' in ans:
@@ -440,6 +546,9 @@ def get_responses():
                         stats[ans] = stats.get(ans, 0) + 1
             elif target_q['type'] == 'SHORT':
                 for r in responses:
+                    # Skip deleted responses
+                    if r.get('is_correct') == 'DELETED':
+                        continue
                     norm_ans = normalize_answer(r['answer'])
                     if norm_ans not in stats:
                         stats[norm_ans] = {"count": 0, "raw": r['answer']}

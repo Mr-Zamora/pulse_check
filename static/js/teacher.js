@@ -70,6 +70,66 @@ function updateTimeDisplays() {
     document.getElementById('quiz-time-disp').textContent = format(quizTime.value);
 }
 
+// --- Delete Response ---
+function deleteResponse(normalizedAnswer, questionType) {
+    if (!confirm(`Delete this response? It will be hidden from students.`)) {
+        return;
+    }
+    
+    fetch('/api/teacher/delete_response', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            room_id: ROOM_ID,
+            question_id: currentQuestionId,
+            normalized_answer: normalizedAnswer,
+            question_type: questionType
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast('Response deleted', 'success');
+            pollServer(); // Refresh the display
+        } else {
+            showToast("Error deleting response: " + data.message, "error");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showToast("Network error deleting response.", "error");
+    });
+}
+
+// --- Delete Student ---
+function deleteStudent(studentName) {
+    if (!confirm(`Remove "${studentName}" from the room?`)) {
+        return;
+    }
+    
+    fetch('/api/teacher/delete_student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            room_id: ROOM_ID,
+            student_name: studentName
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(`Removed ${studentName}`, 'success');
+            pollServer(); // Refresh the roster
+        } else {
+            showToast("Error removing student: " + data.message, "error");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showToast("Network error removing student.", "error");
+    });
+}
+
 // --- Show Responses Toggle ---
 function toggleShowResponses() {
     showResponsesEnabled = !showResponsesEnabled;
@@ -266,11 +326,12 @@ function renderRoster(states) {
         // Show student's answer if available
         let answerDisplay = '';
         if (info.answer) {
-            answerDisplay = `<div class="answer" style="font-size: 12px; color: #64748B; margin-top: 4px;">${info.answer}</div>`;
+            answerDisplay = `<div class="answer" style="font-size: 12px; color: #64748B; margin-top: 4px; white-space: pre-wrap;">${info.answer}</div>`;
         }
         
         html += `
-            <div class="student-card ${stateClass}">
+            <div class="student-card ${stateClass}" style="position: relative;">
+                <button class="delete-student-btn" onclick="deleteStudent('${name}')" title="Remove student">×</button>
                 <div class="name" ${nameStyle}>${displayName}</div>
                 <div class="status">${iconText}</div>
                 ${answerDisplay}
@@ -337,14 +398,24 @@ function renderDistribution(data) {
             let borderStyle = isCorrect ? 'border-left-color: #10B981;' : 'border-left-color: #EF4444;';
             
             html += `
-                <div class="short-answer-group" style="${borderStyle}">
-                    <div><code>${info.raw}</code> <span class="count">[${info.count} Students]</span></div>
+                <div class="short-answer-group" style="${borderStyle}; position: relative;">
+                    <button class="delete-response-btn" data-norm="${norm}" data-type="SHORT" title="Delete this response">×</button>
+                    <div><code style="white-space: pre-wrap;">${info.raw}</code> <span class="count">[${info.count} Students]</span></div>
                 </div>
             `;
         });
     }
     
     distView.innerHTML = html;
+    
+    // Add event listeners for delete buttons
+    document.querySelectorAll('.delete-response-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const norm = this.getAttribute('data-norm');
+            const type = this.getAttribute('data-type');
+            deleteResponse(norm, type);
+        });
+    });
 }
 
 // --- Question Creator logic ---

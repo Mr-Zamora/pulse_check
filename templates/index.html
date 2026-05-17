@@ -2,9 +2,8 @@
 
 {% block content %}
 <div class="landing-container">
-    <h2>Classroom Pulse</h2>
-    <p>Join your classroom session</p>
-    
+    <img src="{{ url_for('static', filename='header.png') }}" alt="Pulse Check" style="width: calc(100% + 80px); display: block; margin: -40px -40px 20px -40px; padding: 0; border-radius: 12px 12px 0 0;">
+
     <form action="/join" method="POST">
         <div class="form-group">
             <label for="student-name">Your Name</label>

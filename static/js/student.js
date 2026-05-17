@@ -14,6 +14,13 @@ const connText = document.getElementById('conn-text');
 function pollServer() {
     fetch(`/api/room/status?room_id=${ROOM_ID}&student_name=${encodeURIComponent(STUDENT_NAME)}`)
         .then(response => {
+            if (response.status === 403) {
+                // Student was removed by teacher
+                return response.json().then(data => {
+                    showKickedScreen(data.message);
+                    throw new Error("Student removed");
+                });
+            }
             if (!response.ok) throw new Error("Network response was not ok");
             return response.json();
         })
@@ -21,13 +28,19 @@ function pollServer() {
             setConnectionStatus(true);
             handleStateUpdate(data);
         })
-        .catch(error => {
-            console.error("Polling error:", error);
-            setConnectionStatus(false);
-        })
-        .finally(() => {
-            setTimeout(pollServer, POLL_INTERVAL);
+        .catch(err => {
+            if (err.message !== "Student removed") {
+                console.error("Polling error:", err);
+                setConnectionStatus(false);
+                setTimeout(pollServer, POLL_INTERVAL);
+            }
+            // If student removed, stop polling
         });
+    
+    // Only continue polling if not removed
+    if (!viewport.classList.contains('kicked')) {
+        setTimeout(pollServer, POLL_INTERVAL);
+    }
 }
 
 function setConnectionStatus(isConnected) {
@@ -125,11 +138,28 @@ function showWaitingState() {
 }
 
 function showLockedState() {
+    let responsesHTML = '';
+    if (showResponses && responseData) {
+        responsesHTML = renderResponseDistribution();
+    }
+    
     viewport.innerHTML = `
         <h3 style="margin-bottom: 20px; color: #64748B;">State: LOCKED</h3>
         <div class="state-card" style="background: #FEF3C7; border: 2px solid #F59E0B;">
             <h3>⏱️ Time's Up!</h3>
             <p>Awaiting feedback from instructor...</p>
+        </div>
+        ${responsesHTML}
+    `;
+}
+
+function showKickedScreen(message) {
+    viewport.classList.add('kicked');
+    viewport.innerHTML = `
+        <div class="state-card" style="background: #FEE2E2; border: 2px solid #EF4444; text-align: center; padding: 40px;">
+            <h2 style="color: #991B1B; margin-bottom: 20px;">🚫 Removed from Room</h2>
+            <p style="color: #7F1D1D; font-size: 16px; margin-bottom: 30px;">${message}</p>
+            <button class="btn-primary" onclick="window.location.href='/'">Return to Login</button>
         </div>
     `;
 }
@@ -243,22 +273,22 @@ function renderResponseDistribution() {
         
     } else if (responseData.question_type === 'SHORT') {
         const qData = responseData.question_data;
-        let correctNorm = qData ? qData.correct_answer.toLowerCase().trim() : "";
+        let correctNorm = (qData && qData.correct_answer) ? qData.correct_answer.toLowerCase().trim() : "";
         
-        const entries = Object.entries(responseData.stats).sort((a,b) => b[1].count - a[1].count);
+        const entries = Object.entries(responseData.stats || {}).sort((a,b) => b[1].count - a[1].count);
         
         if (entries.length === 0) {
             html += `<p style="color: #94A3B8; margin: 10px 0;">No submissions yet.</p>`;
         }
         
         entries.forEach(([norm, info]) => {
-            let isCorrect = (norm === correctNorm);
+            let isCorrect = correctNorm && (norm === correctNorm);
             let borderColor = isCorrect ? '#10B981' : '#EF4444';
             let icon = isCorrect ? '✓' : '✗';
             
             html += `
                 <div style="margin-bottom: 10px; padding: 10px; background: white; border-left: 4px solid ${borderColor}; border-radius: 4px;">
-                    <code style="font-size: 14px;">${info.raw}</code> 
+                    <code style="font-size: 14px; white-space: pre-wrap;">${info.raw}</code> 
                     <span style="color: #64748B; margin-left: 8px;">${icon} [${info.count} student${info.count > 1 ? 's' : ''}]</span>
                 </div>
             `;
@@ -332,6 +362,16 @@ function showToast(message, type="info") {
         toast.style.animation = 'fadeOut 0.3s ease-out forwards';
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+// --- Disconnect ---
+function disconnectStudent() {
+    if (!confirm('Are you sure you want to leave this room?')) {
+        return;
+    }
+    
+    // Redirect to index page
+    window.location.href = '/';
 }
 
 // --- Interaction ---
