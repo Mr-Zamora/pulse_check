@@ -530,6 +530,25 @@ def submit():
     if target_q:
         if target_q['type'] == 'SHORT':
             is_correct = normalize_answer(ans) == normalize_answer(target_q['correct_answer'])
+            
+            # For SHORT questions, delete old answer to allow resubmission
+            if os.path.exists(RESPONSES_CSV):
+                with csv_lock:
+                    responses = []
+                    with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
+                        reader = csv.DictReader(f)
+                        responses = [r for r in reader if not (
+                            r['room_id'] == room_id and 
+                            r['student_name'] == student_name and 
+                            r['question_id'] == q_id
+                        )]
+                    
+                    # Rewrite file without the old answer
+                    with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
+                        fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
+                        writer = csv.DictWriter(f, fieldnames=fieldnames)
+                        writer.writeheader()
+                        writer.writerows(responses)
         else:
             is_correct = str(ans).strip() == str(target_q['correct_answer']).strip()
 

@@ -249,7 +249,8 @@ function showActiveState(qData) {
         hadFocus = document.activeElement === existingTextarea;
     }
     
-    if (hasSubmitted) {
+    if (hasSubmitted && qData.type === 'MCQ') {
+        // MCQ: Show submitted message, no resubmission
         formHTML = `
             <div style="text-align: center; color: #10B981; font-weight: bold; margin-top: 20px; padding: 20px; border: 2px dashed #10B981; border-radius: 8px; background: #ECFDF5;">
                 ✅ Answer submitted successfully. Waiting for others...
@@ -283,9 +284,13 @@ function showActiveState(qData) {
                 <button class="btn-primary" style="margin-top: 20px;" onclick="submitAnswer('MCQ')">Submit Answer</button>
             `;
         } else if (qData.type === 'SHORT') {
+            const buttonText = hasSubmitted ? 'Update Answer' : 'Submit Answer';
+            const statusMessage = hasSubmitted ? '<div style="color: #10B981; font-size: 14px; margin-bottom: 10px;">✓ Answer submitted. You can update it below:</div>' : '';
+            
             formHTML = `
+                ${statusMessage}
                 <textarea id="short-answer" class="short-answer-input" placeholder="Type your answer here..." autocomplete="off" rows="4"></textarea>
-                <button class="btn-primary" onclick="submitAnswer('SHORT')">Submit Answer</button>
+                <button class="btn-primary" onclick="submitAnswer('SHORT')">${buttonText}</button>
             `;
         }
     }
@@ -484,7 +489,8 @@ function disconnectStudent() {
 // --- Interaction ---
 
 function submitAnswer(type) {
-    if (hasSubmitted) return;
+    // Only block resubmission for MCQ questions
+    if (hasSubmitted && type === 'MCQ') return;
     
     let ans = null;
     if (type === 'MCQ') {
@@ -519,7 +525,8 @@ function submitAnswer(type) {
     .then(data => {
         if (data.status === 'success') {
             hasSubmitted = true;
-            showToast("Answer submitted successfully!", "success");
+            const successMessage = type === 'SHORT' ? "Answer updated successfully!" : "Answer submitted successfully!";
+            showToast(successMessage, "success");
             // Force re-render to show success state
             fetch(`/api/room/status?room_id=${ROOM_ID}&student_name=${encodeURIComponent(STUDENT_NAME)}`)
                 .then(r => r.json())
