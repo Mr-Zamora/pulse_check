@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Pulse Check</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .admin-section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .admin-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #1E293B;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 10px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-danger, .btn-warning, .btn-primary, .btn-secondary, .btn-small {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .btn-danger {
+            background: #EF4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+        .btn-warning {
+            background: #F59E0B;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #D97706;
+        }
+        .btn-primary {
+            background: #3B82F6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563EB;
+        }
+        .btn-secondary {
+            background: #64748B;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: #EF4444;
+            color: white;
+        }
+        .btn-small:hover {
+            background: #DC2626;
+        }
+        #room-list table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        #room-list th,
+        #room-list td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        #room-list th {
+            background: #F8FAFC;
+            font-weight: 600;
+            color: #475569;
+        }
+        #room-list tr:hover {
+            background: #F8FAFC;
+        }
+        #room-list .actions-cell {
+            text-align: center;
+            width: 100px;
+        }
+        .state-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .state-waiting {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        .state-active {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        .state-locked {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: #F8FAFC;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3B82F6;
+        }
+        .stat-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: #64748B;
+        }
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1E293B;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <h1>🔧 Admin Dashboard</h1>
+            <a href="/admin/logout" class="btn-secondary">Logout</a>
+        </div>
+        
+        <section class="admin-section">
+            <h2>📊 System Statistics</h2>
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card">
+                    <h3>Active Rooms</h3>
+                    <div class="stat-value" id="stat-rooms">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Connected Students</h3>
+                    <div class="stat-value" id="stat-students">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Questions</h3>
+                    <div class="stat-value" id="stat-questions">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Responses</h3>
+                    <div class="stat-value" id="stat-responses">-</div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="admin-section">
+            <h2>🏠 Room Management</h2>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="loadRoomList()">🔄 Refresh Room List</button>
+                <button class="btn-danger" onclick="deleteAllRooms()">🗑️ Delete All Rooms</button>
+            </div>
+            <div id="room-list"></div>
+        </section>
+        
+        <section class="admin-section">
+            <h2>📝 Data Management</h2>
+            <div class="btn-group">
+                <button class="btn-danger" onclick="deleteAllResponses()">🗑️ Delete All Responses</button>
+                <button class="btn-warning" onclick="clearDisconnected()">🧹 Clear Disconnected Students</button>
+            </div>
+        </section>
+        
+        <section class="admin-section">
+            <h2>💾 Backup & Restore</h2>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="downloadBackup()">⬇️ Download Backup</button>
+            </div>
+            <p style="color: #64748B; margin-top: 10px; font-size: 14px;">
+                Backup includes: database, questions.csv, and responses.csv
+            </p>
+        </section>
+    </div>
+    
+    <div id="toast-container"></div>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

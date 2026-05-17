@@ -2,8 +2,11 @@ import csv
 import os
 import time
 import uuid
+import zipfile
+from io import BytesIO
+from functools import wraps
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from configuration import csv_lock, get_db, init_db, DISCONNECT_TIMEOUT
 
 # Admin credentials - stored in admin.py (NOT committed to Git)
@@ -591,6 +594,230 @@ def get_responses():
         "student_states": student_states,
         "total_submitted": len(responses)
     })
+
+
+# ===========================================================================
+# Admin Routes & API
+# ===========================================================================
+
+def admin_required(f):
+    """Decorator to protect admin endpoints"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_authenticated'):
+            return jsonify({"status": "error", "message": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_authenticated'] = True
+            return redirect('/admin')
+        else:
+            return render_template('admin_login.html', error="Invalid credentials")
+    
+    if session.get('admin_authenticated'):
+        return redirect('/admin')
+    
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_authenticated', None)
+    return redirect('/admin/login')
+
+
+@app.route('/admin')
+def admin():
+    if not session.get('admin_authenticated'):
+        return redirect('/admin/login')
+    
+    return render_template('admin.html')
+
+
+@app.route('/api/admin/stats', methods=['GET'])
+@admin_required
+def admin_stats():
+    try:
+        db = get_db()
+        
+        # Count rooms
+        room_count = db.execute("SELECT COUNT(*) as cnt FROM room_states").fetchone()['cnt']
+        
+        # Count connected students (last_seen != -1)
+        student_count = db.execute(
+            "SELECT COUNT(*) as cnt FROM student_last_seen WHERE last_seen != -1"
+        ).fetchone()['cnt']
+        
+        db.close()
+        
+        # Count questions
+        questions = get_all_questions()
+        question_count = len(questions)
+        
+        # Count responses
+        responses = read_responses()
+        response_count = len([r for r in responses if r.get('is_correct') != 'DELETED'])
+        
+        return jsonify({
+            "status": "success",
+            "stats": {
+                "rooms": room_count,
+                "students": student_count,
+                "questions": question_count,
+                "responses": response_count
+            }
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/admin/rooms', methods=['GET'])
+@admin_required
+def admin_get_rooms():
+    try:
+        db = get_db()
+        rooms = db.execute("""
+            SELECT room_id, state, current_q, show_responses
+            FROM room_states
+        """).fetchall()
+        
+        room_list = []
+        for r in rooms:
+            student_count = db.execute(
+                "SELECT COUNT(*) as cnt FROM student_last_seen WHERE room_id = ? AND last_seen != -1",
+                (r['room_id'],)
+            ).fetchone()['cnt']
+            
+            # Calculate time remaining
+            now = time.time()
+            time_remaining = 0
+            if r['state'] == 'WAITING':
+                # Check instruction time
+                instruction_start = db.execute(
+                    "SELECT instruction_start, instruction_duration FROM room_states WHERE room_id = ?",
+                    (r['room_id'],)
+                ).fetchone()
+                if instruction_start['instruction_start']:
+                    elapsed = now - instruction_start['instruction_start']
+                    time_remaining = max(0, instruction_start['instruction_duration'] - int(elapsed))
+            elif r['state'] == 'ACTIVE':
+                # Check quiz time
+                quiz_start = db.execute(
+                    "SELECT quiz_start, quiz_duration FROM room_states WHERE room_id = ?",
+                    (r['room_id'],)
+                ).fetchone()
+                if quiz_start['quiz_start']:
+                    elapsed = now - quiz_start['quiz_start']
+                    time_remaining = max(0, quiz_start['quiz_duration'] - int(elapsed))
+            
+            room_list.append({
+                'room_id': r['room_id'],
+                'state': r['state'],
+                'question_id': r['current_q'],
+                'time_remaining': time_remaining,
+                'show_responses': r['show_responses'],
+                'student_count': student_count
+            })
+        
+        db.close()
+        return jsonify({"status": "success", "rooms": room_list})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/admin/delete_room', methods=['POST'])
+@admin_required
+def admin_delete_room():
+    try:
+        data = request.get_json()
+        room_id = data.get('room_id')
+        
+        if not room_id:
+            return jsonify({"status": "error", "message": "Missing room_id"}), 400
+        
+        db = get_db()
+        db.execute("DELETE FROM room_states WHERE room_id = ?", (room_id,))
+        db.execute("DELETE FROM student_last_seen WHERE room_id = ?", (room_id,))
+        db.commit()
+        db.close()
+        return jsonify({"status": "success", "message": f"Room {room_id} deleted"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/admin/delete_all_rooms', methods=['POST'])
+@admin_required
+def admin_delete_all_rooms():
+    try:
+        db = get_db()
+        db.execute("DELETE FROM room_states")
+        db.execute("DELETE FROM student_last_seen")
+        db.commit()
+        db.close()
+        return jsonify({"status": "success", "message": "All rooms deleted"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/admin/delete_all_responses', methods=['POST'])
+@admin_required
+def admin_delete_all_responses():
+    try:
+        with csv_lock:
+            with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct'])
+                writer.writeheader()
+        return jsonify({"status": "success", "message": "All responses deleted"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/admin/clear_disconnected', methods=['POST'])
+@admin_required
+def admin_clear_disconnected():
+    try:
+        db = get_db()
+        cursor = db.execute("DELETE FROM student_last_seen WHERE last_seen = -1")
+        count = cursor.rowcount
+        db.commit()
+        db.close()
+        return jsonify({"status": "success", "message": f"Removed {count} disconnected students"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/admin/backup', methods=['GET'])
+@admin_required
+def admin_backup():
+    try:
+        from configuration import DB_PATH
+        
+        memory_file = BytesIO()
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.write(DB_PATH, 'classroom_pulse.db')
+            zf.write(RESPONSES_CSV, 'responses.csv')
+            zf.write(QUESTIONS_CSV, 'questions.csv')
+        
+        memory_file.seek(0)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=f'pulse_check_backup_{timestamp}.zip'
+        )
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # ===========================================================================
