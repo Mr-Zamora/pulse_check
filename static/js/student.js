@@ -151,18 +151,25 @@ function showActiveState(qData) {
     } else {
         if (qData.type === 'MCQ') {
             const options = qData.options.split('|');
+            // Check if this is a multi-select question (correct answer contains comma)
+            const isMultiSelect = qData.correct_answer && qData.correct_answer.includes(',');
+            const inputType = isMultiSelect ? 'checkbox' : 'radio';
+            
             let optionsHTML = options.map(opt => {
                 const optParts = opt.split(':');
                 const optVal = optParts[0].trim(); // Extract 'A', 'B', etc.
                 return `
                     <label class="mcq-option">
-                        <input type="radio" name="answer" value="${optVal}">
+                        <input type="${inputType}" name="answer" value="${optVal}">
                         <span>${opt}</span>
                     </label>
                 `;
             }).join('');
             
+            const instructionText = isMultiSelect ? '<p style="color: #64748B; font-style: italic; margin-bottom: 12px;">Select all that apply</p>' : '';
+            
             formHTML = `
+                ${instructionText}
                 <div class="mcq-options" id="mcq-form">
                     ${optionsHTML}
                 </div>
@@ -334,12 +341,14 @@ function submitAnswer(type) {
     
     let ans = null;
     if (type === 'MCQ') {
-        const selected = document.querySelector('input[name="answer"]:checked');
-        if (!selected) {
-            showToast("Please select an option.", "error");
+        const selectedInputs = document.querySelectorAll('input[name="answer"]:checked');
+        if (selectedInputs.length === 0) {
+            showToast("Please select at least one option.", "error");
             return;
         }
-        ans = selected.value;
+        // If multiple selections, join with comma and space
+        const values = Array.from(selectedInputs).map(input => input.value);
+        ans = values.join(', ');
     } else if (type === 'SHORT') {
         const input = document.getElementById('short-answer');
         if (!input.value.trim()) {

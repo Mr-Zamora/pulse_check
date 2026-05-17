@@ -219,7 +219,8 @@
             background: #EFF6FF;
         }
 
-        .mcq-option input[type="radio"] {
+        .mcq-option input[type="radio"],
+        .mcq-option input[type="checkbox"] {
             margin-right: 12px;
             width: 18px;
             height: 18px;
