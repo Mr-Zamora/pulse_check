@@ -172,6 +172,13 @@ function showActiveState(qData) {
 
     let formHTML = '';
     
+    // Preserve textarea value before re-rendering
+    let preservedTextValue = '';
+    const existingTextarea = document.getElementById('short-answer');
+    if (existingTextarea) {
+        preservedTextValue = existingTextarea.value;
+    }
+    
     if (hasSubmitted) {
         formHTML = `
             <div style="text-align: center; color: #10B981; font-weight: bold; margin-top: 20px; padding: 20px; border: 2px dashed #10B981; border-radius: 8px; background: #ECFDF5;">
@@ -229,6 +236,15 @@ function showActiveState(qData) {
             ${responsesHTML}
         </div>
     `;
+    
+    // Restore textarea value after re-rendering
+    if (preservedTextValue && qData.type === 'SHORT' && !hasSubmitted) {
+        const newTextarea = document.getElementById('short-answer');
+        if (newTextarea) {
+            newTextarea.value = preservedTextValue;
+        }
+    }
+    
     updateTimerDisplay();
 }
 

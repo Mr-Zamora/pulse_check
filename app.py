@@ -344,14 +344,19 @@ def delete_student():
         if not room_id or not student_name:
             return jsonify({"status": "error", "message": "Missing room_id or student_name"}), 400
         
+        print(f"Deleting student: room_id={room_id}, student_name={student_name}")
+        
         # Mark student as kicked by setting last_seen to -1 (special value)
         db = get_db()
-        db.execute("UPDATE student_last_seen SET last_seen = -1 WHERE room_id = ? AND student_name = ?", 
+        cursor = db.execute("UPDATE student_last_seen SET last_seen = -1 WHERE room_id = ? AND student_name = ?", 
                    (room_id, student_name))
+        rows_affected = cursor.rowcount
         db.commit()
         db.close()
         
-        return jsonify({"status": "success"})
+        print(f"Rows affected: {rows_affected}")
+        
+        return jsonify({"status": "success", "rows_affected": rows_affected})
     except Exception as e:
         print(f"Error deleting student: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500

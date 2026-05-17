@@ -290,6 +290,8 @@ function toggleAnonymize() {
 }
 
 let lastStudentStates = {};
+let lastDistributionData = null;
+
 function renderRoster(states) {
     lastStudentStates = states;
     
@@ -346,6 +348,13 @@ function renderRoster(states) {
 }
 
 function renderDistribution(data) {
+    // Only re-render if data has changed
+    const dataString = JSON.stringify(data);
+    if (lastDistributionData === dataString) {
+        return; // Skip re-render if nothing changed
+    }
+    lastDistributionData = dataString;
+    
     if (!data.question_type) {
         distView.innerHTML = `<h3 style="color: #64748B; font-weight: normal; text-align: center; margin-top: 40px;">No Active Submissions</h3>`;
         return;
