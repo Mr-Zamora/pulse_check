@@ -242,10 +242,60 @@ function fetchResponses() {
                 renderRoster(data.student_states);
                 renderDistribution(data);
                 
-                ribbonSub.textContent = data.total_submitted;
-                ribbonTot.textContent = Object.keys(data.student_states).length;
+                const totalStudents = Object.keys(data.student_states).length;
+                const totalSubmitted = data.total_submitted;
+                
+                ribbonSub.textContent = totalSubmitted;
+                ribbonTot.textContent = totalStudents;
+                
+                // Update submission indicator
+                updateSubmissionIndicator(totalSubmitted, totalStudents);
             }
         });
+}
+
+function updateSubmissionIndicator(submitted, total) {
+    const ribbonRight = document.querySelector('.ribbon-right');
+    const lockBtn = document.querySelector('.btn-lock');
+    
+    if (submitted === total && total > 0 && currentRoomState === 'ACTIVE') {
+        // All students submitted - show prominent indicator
+        ribbonRight.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓ ALL SUBMITTED</span>
+                <span style="color: #64748B;">(<strong>${submitted}</strong>/${total})</span>
+            </div>
+        `;
+        ribbonRight.style.background = 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)';
+        ribbonRight.style.borderLeft = '4px solid #10B981';
+        ribbonRight.style.padding = '8px 16px';
+        ribbonRight.style.borderRadius = '4px';
+        
+        // Make lock button prominent
+        if (lockBtn) {
+            lockBtn.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+            lockBtn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+            lockBtn.style.transform = 'scale(1.05)';
+            lockBtn.style.fontWeight = 'bold';
+            lockBtn.textContent = '🔒 Lock Now - All Ready!';
+        }
+    } else {
+        // Normal state
+        ribbonRight.innerHTML = `Submitted: <strong id="ribbon-submitted">${submitted}</strong> / <span id="ribbon-total">${total}</span>`;
+        ribbonRight.style.background = '';
+        ribbonRight.style.borderLeft = '';
+        ribbonRight.style.padding = '';
+        ribbonRight.style.borderRadius = '';
+        
+        // Reset lock button
+        if (lockBtn) {
+            lockBtn.style.background = '';
+            lockBtn.style.boxShadow = '';
+            lockBtn.style.transform = '';
+            lockBtn.style.fontWeight = '';
+            lockBtn.textContent = 'Lock Submissions';
+        }
+    }
 }
 
 // --- Rendering ---

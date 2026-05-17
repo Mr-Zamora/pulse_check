@@ -319,6 +319,7 @@
 
         .ribbon-right {
             font-size: 16px;
+            transition: all 0.3s ease;
         }
 
         .ribbon-right strong {
@@ -645,6 +646,7 @@
         .btn-lock {
             background: #F59E0B;
             color: white;
+            transition: all 0.3s ease;
         }
 
         .btn-lock:hover {
