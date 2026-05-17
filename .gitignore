@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Environment variables
+.env
+.env.local
+
+# SQLite database (runtime state — do not commit)
+database/classroom_pulse.db
+
+# Student response data (privacy — do not commit)
+database/responses.csv
+
+# Flask session / instance files
+instance/
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

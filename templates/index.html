@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="landing-container">
+    <h2>Classroom Pulse</h2>
+    <p>Join your classroom session</p>
+    
+    <form action="/join" method="POST">
+        <div class="form-group">
+            <label for="student-name">Your Name</label>
+            <input type="text" id="student-name" name="student_name" placeholder="Enter your name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="room-id">Room ID</label>
+            <input type="text" id="room-id" name="room_id" placeholder="Enter room code" required>
+        </div>
+        
+        <button type="submit" class="btn-primary">Join Room</button>
+    </form>
+</div>
+{% endblock %}

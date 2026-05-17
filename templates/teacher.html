@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not room_id %}
+<div class="landing-container">
+    <h2>Teacher Portal</h2>
+    <p>Manage a classroom session</p>
+    <form action="/teacher" method="GET">
+        <div class="form-group">
+            <label for="room-id">Room ID to Manage</label>
+            <input type="text" id="room-id" name="room_id" placeholder="Enter room code" required>
+        </div>
+        <button type="submit" class="btn-primary">Open Dashboard</button>
+    </form>
+</div>
+{% else %}
+<!-- Teacher Dashboard Grid -->
+<div class="teacher-ribbon" id="summary-ribbon">
+    <div class="ribbon-left" id="ribbon-q-title">
+        [No Question Active]
+    </div>
+    <div class="ribbon-center">
+        <div class="timer-label" id="ribbon-timer-label">Timer</div>
+        <div class="timer" id="ribbon-timer" style="color: #64748B;">--:--</div>
+    </div>
+    <div class="ribbon-right">
+        Submitted: <strong id="ribbon-submitted">0</strong> / <span id="ribbon-total">0</span>
+    </div>
+</div>
+
+<div class="teacher-main">
+    
+    <!-- Component B: Distribution View -->
+    <div class="distribution-view" id="distribution-view">
+        <h3 style="color: #64748B; font-weight: normal; text-align: center; margin-top: 40px;">No Active Submissions</h3>
+    </div>
+    
+    <!-- Component C: Student Roster -->
+    <div class="roster-view">
+        <div class="roster-header">
+            <h3>Student Roster</h3>
+            <div class="anonymize-toggle">
+                <input type="checkbox" id="anonymize" onchange="toggleAnonymize()">
+                <label for="anonymize">Anonymize Screen</label>
+            </div>
+        </div>
+        <div class="student-grid" id="roster-grid">
+            <!-- Student cards injected here -->
+            <p style="color: #94A3B8; text-align: center; grid-column: 1/-1; padding: 20px;">Waiting for students to join...</p>
+        </div>
+    </div>
+    
+    <!-- Component D: Question Control Panel -->
+    <div class="control-panel">
+        <h3>Question Control Panel</h3>
+        
+        <div class="control-row">
+            <div class="control-group">
+                <label>Select Question</label>
+                <select id="q-select">
+                    <!-- Options injected here -->
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Instruction Time (sec)</label>
+                <input type="number" id="instr-time" value="120" min="30" max="300" oninput="updateTimeDisplays()">
+                <div class="time-display" id="instr-time-disp">02:00</div>
+            </div>
+            
+            <div class="control-group">
+                <label>Quiz Time (sec)</label>
+                <input type="number" id="quiz-time" value="120" min="30" max="300" oninput="updateTimeDisplays()">
+                <div class="time-display" id="quiz-time-disp">02:00</div>
+            </div>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="auto-start">
+            <label for="auto-start">Auto-start quiz when instruction timer expires</label>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn btn-prepare" onclick="sendControl('prepare')">Prepare Question</button>
+            <button class="btn btn-start" onclick="sendControl('start')">Start Quiz Now</button>
+            <button class="btn btn-lock" onclick="sendControl('lock')">Lock Submissions</button>
+            <button class="btn btn-reset" onclick="sendControl('reset')">Reset Room</button>
+        </div>
+        
+        <!-- Question Creator -->
+        <div class="question-creator">
+            <button class="toggle-creator" onclick="toggleCreator()">➕ Create New Question</button>
+            
+            <div class="creator-form" id="creator-form" style="display: none;">
+                <div class="control-group">
+                    <label>Question Type</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="q-type" value="MCQ" checked onchange="toggleQType()"> Multiple Choice (MCQ)</label>
+                        <label><input type="radio" name="q-type" value="SHORT" onchange="toggleQType()"> Short Answer (SHORT)</label>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Question Prompt</label>
+                    <textarea id="new-q-prompt" placeholder="Enter your question or code snippet..."></textarea>
+                </div>
+                
+                <!-- MCQ Options -->
+                <div class="control-group" id="mcq-options-group">
+                    <label>Answer Options</label>
+                    <div class="option-inputs" id="mcq-options-container">
+                        <!-- Default 4 options -->
+                        <div class="option-row"><input type="text" class="opt-text" placeholder="Option A"><input type="radio" name="correct" value="0" checked></div>
+                        <div class="option-row"><input type="text" class="opt-text" placeholder="Option B"><input type="radio" name="correct" value="1"></div>
+                        <div class="option-row"><input type="text" class="opt-text" placeholder="Option C"><input type="radio" name="correct" value="2"></div>
+                        <div class="option-row"><input type="text" class="opt-text" placeholder="Option D"><input type="radio" name="correct" value="3"></div>
+                    </div>
+                    <button class="btn-add-option" style="margin-top: 8px;" onclick="addOption()">+ Add Option</button>
+                </div>
+                
+                <!-- SHORT Answer -->
+                <div class="control-group" id="short-answer-group" style="display: none;">
+                    <label>Expected Answer</label>
+                    <input type="text" id="new-q-short" placeholder="Enter expected answer (will be normalized)" style="width: 100%; box-sizing: border-box;">
+                    <div class="helper-text">Answer matching is case-insensitive and ignores extra whitespace</div>
+                </div>
+                
+                <button class="btn btn-prepare" style="width: auto;" onclick="submitNewQuestion()">Add Question to Library</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if room_id %}
+<script>
+    const ROOM_ID = "{{ room_id }}";
+</script>
+<script src="{{ url_for('static', filename='js/teacher.js') }}"></script>
+{% endif %}
+{% endblock %}

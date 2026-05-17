@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Chunking Classroom Feedback - UI Prototypes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            line-height: 1.6;
+        }
+
+        .prototype-section {
+            border: 3px solid #3B82F6;
+            margin: 20px;
+            padding: 20px;
+            background: white;
+        }
+
+        .prototype-section h1 {
+            background: #3B82F6;
+            color: white;
+            padding: 10px 20px;
+            margin: -20px -20px 20px -20px;
+            font-size: 18px;
+        }
+
+        hr {
+            margin: 40px 0;
+            border: none;
+            border-top: 2px dashed #CBD5E1;
+        }
+
+        /* ===== LANDING PAGE STYLES ===== */
+        .landing-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .landing-container h2 {
+            text-align: center;
+            color: #1E293B;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .landing-container p {
+            text-align: center;
+            color: #64748B;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #2563EB;
+        }
+
+        /* ===== STUDENT INTERFACE STYLES ===== */
+        .student-header {
+            background: #1E293B;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-info {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .student-info span {
+            font-size: 14px;
+        }
+
+        .student-info strong {
+            font-weight: 600;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10B981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .viewport {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .state-card {
+            background: white;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .state-card.waiting {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+        }
+
+        .state-card h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #1E293B;
+        }
+
+        .state-card p {
+            color: #64748B;
+            font-size: 16px;
+        }
+
+        .question-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-prompt {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #1E293B;
+            line-height: 1.6;
+        }
+
+        .question-prompt code {
+            background: #F1F5F9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+
+        .mcq-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mcq-option {
+            padding: 16px 20px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+        }
+
+        .mcq-option:hover {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+        }
+
+        .mcq-option input[type="radio"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .short-answer-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+
+        .short-answer-input:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .timer-display {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #F59E0B;
+        }
+
+        /* ===== TEACHER DASHBOARD STYLES ===== */
+        .teacher-ribbon {
+            background: #1E293B;
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ribbon-left {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .ribbon-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ribbon-center .timer-label {
+            font-size: 12px;
+            color: #94A3B8;
+            margin-bottom: 4px;
+        }
+
+        .ribbon-center .timer {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .ribbon-center .timer.instruction {
+            color: #3B82F6;
+        }
+
+        .ribbon-center .timer.quiz {
+            color: #F59E0B;
+        }
+
+        .ribbon-center .timer.review {
+            color: #10B981;
+            font-size: 20px;
+        }
+
+        .ribbon-right {
+            font-size: 16px;
+        }
+
+        .ribbon-right strong {
+            color: #10B981;
+            font-size: 24px;
+        }
+
+        .teacher-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .distribution-view {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .distribution-view h3 {
+            margin-bottom: 20px;
+            color: #1E293B;
+            font-size: 18px;
+        }
+
+        .bar-container {
+            margin: 16px 0;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .bar-track {
+            background: #E2E8F0;
+            width: 100%;
+            border-radius: 4px;
+            height: 24px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .bar-fill.correct {
+            background: #10B981;
+        }
+
+        .bar-fill.incorrect {
+            background: #EF4444;
+        }
+
+        .short-answer-group {
+            background: #F8FAFC;
+            border-left: 4px solid #3B82F6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+
+        .short-answer-group code {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #1E293B;
+        }
+
+        .short-answer-group .count {
+            color: #F59E0B;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .short-answer-group .warning {
+            color: #EF4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .roster-view {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .roster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .roster-header h3 {
+            color: #1E293B;
+            font-size: 18px;
+        }
+
+        .anonymize-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .student-card {
+            border-radius: 6px;
+            padding: 12px;
+            border: 2px solid transparent;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .student-card .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .student-card .status {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .state-disconnected {
+            background-color: #F1F5F9;
+            border-style: dashed;
+            border-color: #CBD5E1;
+            color: #94A3B8;
+        }
+
+        .state-thinking {
+            background-color: #FFFFFF;
+            border-color: #F59E0B;
+            animation: pulse 2s infinite;
+        }
+
+        .state-mcq-correct {
+            background-color: #ECFDF5;
+            border-color: #10B981;
+            color: #065F46;
+        }
+
+        .state-mcq-incorrect {
+            background-color: #FEF2F2;
+            border-color: #EF4444;
+            color: #991B1B;
+        }
+
+        .state-short-submit {
+            background-color: #EFF6FF;
+            border-color: #3B82F6;
+            color: #1E40AF;
+        }
+
+        .control-panel {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel h3 {
+            margin-bottom: 20px;
+            color: #1E293B;
+            font-size: 18px;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            padding: 10px 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .time-display {
+            font-size: 12px;
+            color: #64748B;
+            margin-top: 4px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-prepare {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .btn-prepare:hover {
+            background: #2563EB;
+        }
+
+        .btn-start {
+            background: #10B981;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #059669;
+        }
+
+        .btn-lock {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .btn-lock:hover {
+            background: #D97706;
+        }
+
+        .btn-reset {
+            background: #64748B;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #475569;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .question-creator {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid #E2E8F0;
+        }
+
+        .toggle-creator {
+            background: #F1F5F9;
+            color: #1E293B;
+            padding: 10px 20px;
+            border: 2px solid #CBD5E1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .toggle-creator:hover {
+            background: #E2E8F0;
+        }
+
+        .creator-form {
+            display: grid;
+            gap: 16px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .radio-group input[type="radio"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .option-inputs {
+            display: grid;
+            gap: 8px;
+        }
+
+        .option-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .option-row input[type="text"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .option-row input[type="radio"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #64748B;
+            font-style: italic;
+        }
+
+        .btn-add-option {
+            background: #F1F5F9;
+            color: #475569;
+            padding: 8px 16px;
+            border: 2px dashed #CBD5E1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-add-option:hover {
+            background: #E2E8F0;
+        }
+
+        /* ===== RESPONSIVE LAYOUT ===== */
+        @media (max-width: 768px) {
+            .teacher-main {
+                grid-template-columns: 1fr;
+            }
+            .teacher-ribbon {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            .control-row {
+                grid-template-columns: 1fr;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .student-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .radio-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .landing-container {
+                margin: 40px 20px;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================================
+     PROTOTYPE 2: STUDENT INTERFACE
+     ======================================== -->
+<div class="prototype-section">
+    <h1>PROTOTYPE 2: Student Interface (student.html)</h1>
+    
+    <!-- Header -->
+    <div class="student-header">
+        <div class="student-info">
+            <span><strong>Student:</strong> Alex Chen</span>
+            <span><strong>Room:</strong> 1234</span>
+        </div>
+        <div class="connection-indicator">
+            <div class="status-dot"></div>
+            <span>Connected</span>
+        </div>
+    </div>
+    
+    <!-- WAITING State -->
+    <div class="viewport">
+        <h3 style="margin-bottom: 20px; color: #64748B;">State: WAITING</h3>
+        <div class="state-card waiting">
+            <h3>👀 Eyes on Teacher</h3>
+            <p>Listen to the presentation and engage with the instructor.</p>
+        </div>
+    </div>
+    
+    <!-- ACTIVE State - MCQ -->
+    <div class="viewport">
+        <h3 style="margin-bottom: 20px; color: #64748B;">State: ACTIVE (Multiple Choice)</h3>
+        <div class="question-container">
+            <div class="timer-display">01:45</div>
+            
+            <div class="question-prompt">
+                Which line correctly invokes an inline loop in Python?
+            </div>
+            
+            <div class="mcq-options">
+                <label class="mcq-option">
+                    <input type="radio" name="mcq-answer" value="A">
+                    <span>A: <code>[x for x in range(10)]</code></span>
+                </label>
+                <label class="mcq-option">
+                    <input type="radio" name="mcq-answer" value="B">
+                    <span>B: <code>for x in range(10): append(x)</code></span>
+                </label>
+                <label class="mcq-option">
+                    <input type="radio" name="mcq-answer" value="C">
+                    <span>C: <code>loop x in range(10)</code></span>
+                </label>
+                <label class="mcq-option">
+                    <input type="radio" name="mcq-answer" value="D">
+                    <span>D: <code>range(10).forEach(x)</code></span>
+                </label>
+            </div>
+            
+            <button class="btn-primary" style="margin-top: 20px;">Submit Answer</button>
+        </div>
+    </div>
+    
+    <!-- ACTIVE State - SHORT -->
+    <div class="viewport">
+        <h3 style="margin-bottom: 20px; color: #64748B;">State: ACTIVE (Short Answer)</h3>
+        <div class="question-container">
+            <div class="timer-display">01:23</div>
+            
+            <div class="question-prompt">
+                Complete the code to print "Hello, World!":
+            </div>
+            
+            <input type="text" class="short-answer-input" placeholder="Type your answer here..." value='print("Hello, World!")'>
+            
+            <button class="btn-primary">Submit Answer</button>
+        </div>
+    </div>
+    
+    <!-- LOCKED State -->
+    <div class="viewport">
+        <h3 style="margin-bottom: 20px; color: #64748B;">State: LOCKED</h3>
+        <div class="state-card" style="background: #FEF3C7; border: 2px solid #F59E0B;">
+            <h3>⏱️ Time's Up!</h3>
+            <p>Awaiting feedback from instructor...</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+question_id,room_id,type,prompt,options,correct_answer
+q_syntax_01,1234,MCQ,Which line correctly invokes an inline loop?,A: [x for x in y]|B: for x in y: append(x)|C: loop x in y|D: y.forEach(x),A
+q_syntax_02,1234,SHORT,Complete the code to print "Hello World":,,"print(""Hello World"")"
+q_logic_01,1234,MCQ,What is the output of print(3 * 'A')?,A: 3A|B: AAA|C: 'A' 'A' 'A'|D: TypeError,B
+q_logic_02,1234,SHORT,What function returns the length of a list?,,"len"
+q_bcbaf11a,5678,SHORT,What is your name?,,my name is...
+q_e7e80d5d,9999,MCQ,What does HTML stand for?,A: HyperText Markup Language|B: HyperText Making Language|C: Home Tool Markup Language,A
+q_06c8cff8,9999,SHORT,Who is Rom Zamora?,,The GOAT
+q_f1638ae6,9999,SHORT,Why is the?,,sky
+q_7a0760ba,9999,MCQ,Pick letter A,A: A|B: B|C: C|D: D,A

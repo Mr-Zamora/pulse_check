@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Chunking Classroom Feedback - UI Prototypes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            line-height: 1.6;
+        }
+
+        .prototype-section {
+            border: 3px solid #3B82F6;
+            margin: 20px;
+            padding: 20px;
+            background: white;
+        }
+
+        .prototype-section h1 {
+            background: #3B82F6;
+            color: white;
+            padding: 10px 20px;
+            margin: -20px -20px 20px -20px;
+            font-size: 18px;
+        }
+
+        hr {
+            margin: 40px 0;
+            border: none;
+            border-top: 2px dashed #CBD5E1;
+        }
+
+        /* ===== LANDING PAGE STYLES ===== */
+        .landing-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .landing-container h2 {
+            text-align: center;
+            color: #1E293B;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .landing-container p {
+            text-align: center;
+            color: #64748B;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #2563EB;
+        }
+
+        /* ===== STUDENT INTERFACE STYLES ===== */
+        .student-header {
+            background: #1E293B;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-info {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .student-info span {
+            font-size: 14px;
+        }
+
+        .student-info strong {
+            font-weight: 600;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10B981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .viewport {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .state-card {
+            background: white;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .state-card.waiting {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+        }
+
+        .state-card h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #1E293B;
+        }
+
+        .state-card p {
+            color: #64748B;
+            font-size: 16px;
+        }
+
+        .question-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-prompt {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #1E293B;
+            line-height: 1.6;
+        }
+
+        .question-prompt code {
+            background: #F1F5F9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+
+        .mcq-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mcq-option {
+            padding: 16px 20px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+        }
+
+        .mcq-option:hover {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+        }
+
+        .mcq-option input[type="radio"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .short-answer-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+
+        .short-answer-input:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .timer-display {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #F59E0B;
+        }
+
+        /* ===== TEACHER DASHBOARD STYLES ===== */
+        .teacher-ribbon {
+            background: #1E293B;
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ribbon-left {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .ribbon-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ribbon-center .timer-label {
+            font-size: 12px;
+            color: #94A3B8;
+            margin-bottom: 4px;
+        }
+
+        .ribbon-center .timer {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .ribbon-center .timer.instruction {
+            color: #3B82F6;
+        }
+
+        .ribbon-center .timer.quiz {
+            color: #F59E0B;
+        }
+
+        .ribbon-center .timer.review {
+            color: #10B981;
+            font-size: 20px;
+        }
+
+        .ribbon-right {
+            font-size: 16px;
+        }
+
+        .ribbon-right strong {
+            color: #10B981;
+            font-size: 24px;
+        }
+
+        .teacher-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .distribution-view {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .distribution-view h3 {
+            margin-bottom: 20px;
+            color: #1E293B;
+            font-size: 18px;
+        }
+
+        .bar-container {
+            margin: 16px 0;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .bar-track {
+            background: #E2E8F0;
+            width: 100%;
+            border-radius: 4px;
+            height: 24px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .bar-fill.correct {
+            background: #10B981;
+        }
+
+        .bar-fill.incorrect {
+            background: #EF4444;
+        }
+
+        .short-answer-group {
+            background: #F8FAFC;
+            border-left: 4px solid #3B82F6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+
+        .short-answer-group code {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #1E293B;
+        }
+
+        .short-answer-group .count {
+            color: #F59E0B;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .short-answer-group .warning {
+            color: #EF4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .roster-view {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .roster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .roster-header h3 {
+            color: #1E293B;
+            font-size: 18px;
+        }
+
+        .anonymize-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .student-card {
+            border-radius: 6px;
+            padding: 12px;
+            border: 2px solid transparent;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .student-card .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .student-card .status {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .state-disconnected {
+            background-color: #F1F5F9;
+            border-style: dashed;
+            border-color: #CBD5E1;
+            color: #94A3B8;
+        }
+
+        .state-thinking {
+            background-color: #FFFFFF;
+            border-color: #F59E0B;
+            animation: pulse 2s infinite;
+        }
+
+        .state-mcq-correct {
+            background-color: #ECFDF5;
+            border-color: #10B981;
+            color: #065F46;
+        }
+
+        .state-mcq-incorrect {
+            background-color: #FEF2F2;
+            border-color: #EF4444;
+            color: #991B1B;
+        }
+
+        .state-short-submit {
+            background-color: #EFF6FF;
+            border-color: #3B82F6;
+            color: #1E40AF;
+        }
+
+        .control-panel {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel h3 {
+            margin-bottom: 20px;
+            color: #1E293B;
+            font-size: 18px;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            padding: 10px 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .time-display {
+            font-size: 12px;
+            color: #64748B;
+            margin-top: 4px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-prepare {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .btn-prepare:hover {
+            background: #2563EB;
+        }
+
+        .btn-start {
+            background: #10B981;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #059669;
+        }
+
+        .btn-lock {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .btn-lock:hover {
+            background: #D97706;
+        }
+
+        .btn-reset {
+            background: #64748B;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #475569;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .question-creator {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid #E2E8F0;
+        }
+
+        .toggle-creator {
+            background: #F1F5F9;
+            color: #1E293B;
+            padding: 10px 20px;
+            border: 2px solid #CBD5E1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .toggle-creator:hover {
+            background: #E2E8F0;
+        }
+
+        .creator-form {
+            display: grid;
+            gap: 16px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .radio-group input[type="radio"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .option-inputs {
+            display: grid;
+            gap: 8px;
+        }
+
+        .option-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .option-row input[type="text"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .option-row input[type="radio"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #64748B;
+            font-style: italic;
+        }
+
+        .btn-add-option {
+            background: #F1F5F9;
+            color: #475569;
+            padding: 8px 16px;
+            border: 2px dashed #CBD5E1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-add-option:hover {
+            background: #E2E8F0;
+        }
+
+        /* ===== RESPONSIVE LAYOUT ===== */
+        @media (max-width: 768px) {
+            .teacher-main {
+                grid-template-columns: 1fr;
+            }
+            .teacher-ribbon {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            .control-row {
+                grid-template-columns: 1fr;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .student-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .radio-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .landing-container {
+                margin: 40px 20px;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================================
+     PROTOTYPE 3: TEACHER DASHBOARD
+     ======================================== -->
+<div class="prototype-section">
+    <h1>PROTOTYPE 3: Teacher Dashboard (teacher.html)</h1>
+    
+    <!-- Component A: Summary Ribbon -->
+    <div class="teacher-ribbon">
+        <div class="ribbon-left">
+            [Q2: Loop Control Structures]
+        </div>
+        <div class="ribbon-center">
+            <div class="timer-label">Instruction Time</div>
+            <div class="timer instruction">01:45</div>
+        </div>
+        <div class="ribbon-right">
+            Submitted: <strong>14</strong> / 18
+        </div>
+    </div>
+    
+    <!-- Alternative ribbon states -->
+    <div class="teacher-ribbon" style="margin-top: 20px;">
+        <div class="ribbon-left">
+            [Q2: Loop Control Structures]
+        </div>
+        <div class="ribbon-center">
+            <div class="timer-label">Quiz Time</div>
+            <div class="timer quiz">01:23</div>
+        </div>
+        <div class="ribbon-right">
+            Submitted: <strong>14</strong> / 18
+        </div>
+    </div>
+    
+    <div class="teacher-ribbon" style="margin-top: 20px;">
+        <div class="ribbon-left">
+            [Q2: Loop Control Structures]
+        </div>
+        <div class="ribbon-center">
+            <div class="timer review">Review Mode</div>
+        </div>
+        <div class="ribbon-right">
+            Submitted: <strong>18</strong> / 18
+        </div>
+    </div>
+    
+    <!-- Main Dashboard Grid -->
+    <div class="teacher-main">
+        
+        <!-- Component B: Distribution View -->
+        <div class="distribution-view">
+            <h3>Response Distribution - MCQ</h3>
+            
+            <div class="bar-container">
+                <div class="bar-label">
+                    <span>Option A (Correct)</span>
+                    <span><strong>65%</strong> (11/17)</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill correct" style="width: 65%;"></div>
+                </div>
+            </div>
+            
+            <div class="bar-container">
+                <div class="bar-label">
+                    <span>Option B</span>
+                    <span><strong>18%</strong> (3/17)</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill incorrect" style="width: 18%;"></div>
+                </div>
+            </div>
+            
+            <div class="bar-container">
+                <div class="bar-label">
+                    <span>Option C</span>
+                    <span><strong>12%</strong> (2/17)</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill incorrect" style="width: 12%;"></div>
+                </div>
+            </div>
+            
+            <div class="bar-container">
+                <div class="bar-label">
+                    <span>Option D</span>
+                    <span><strong>6%</strong> (1/17)</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill incorrect" style="width: 6%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Component C: Student Roster -->
+        <div class="roster-view">
+            <div class="roster-header">
+                <h3>Student Roster</h3>
+                <div class="anonymize-toggle">
+                    <input type="checkbox" id="anonymize">
+                    <label for="anonymize">Anonymize Screen</label>
+                </div>
+            </div>
+            
+            <div class="student-grid">
+                <div class="student-card state-mcq-correct">
+                    <div class="name">Alex C.</div>
+                    <div class="status">✓ Correct</div>
+                </div>
+                <div class="student-card state-mcq-correct">
+                    <div class="name">Maria G.</div>
+                    <div class="status">✓ Correct</div>
+                </div>
+                <div class="student-card state-mcq-incorrect">
+                    <div class="name">James L.</div>
+                    <div class="status">✗ Incorrect</div>
+                </div>
+                <div class="student-card state-thinking">
+                    <div class="name">Sarah K.</div>
+                    <div class="status">⏳ Thinking...</div>
+                </div>
+                <div class="student-card state-mcq-correct">
+                    <div class="name">David P.</div>
+                    <div class="status">✓ Correct</div>
+                </div>
+                <div class="student-card state-short-submit">
+                    <div class="name">Emma W.</div>
+                    <div class="status">📝 Submitted</div>
+                </div>
+                <div class="student-card state-mcq-incorrect">
+                    <div class="name">Ryan T.</div>
+                    <div class="status">✗ Incorrect</div>
+                </div>
+                <div class="student-card state-disconnected">
+                    <div class="name">Lisa M.</div>
+                    <div class="status">⚠ Disconnected</div>
+                </div>
+                <div class="student-card state-mcq-correct">
+                    <div class="name">Tom H.</div>
+                    <div class="status">✓ Correct</div>
+                </div>
+                <div class="student-card state-thinking">
+                    <div class="name">Nina R.</div>
+                    <div class="status">⏳ Thinking...</div>
+                </div>
+                <div class="student-card state-mcq-correct">
+                    <div class="name">Chris B.</div>
+                    <div class="status">✓ Correct</div>
+                </div>
+                <div class="student-card state-mcq-correct">
+                    <div class="name">Amy S.</div>
+                    <div class="status">✓ Correct</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alternative: Short Answer Distribution -->
+        <div class="distribution-view">
+            <h3>Response Distribution - Short Answer</h3>
+            
+            <div class="short-answer-group">
+                <div><code>print("Hello, World!")</code> <span class="count">[8 Students]</span></div>
+            </div>
+            
+            <div class="short-answer-group">
+                <div><code>print('Hello, World!')</code> <span class="count">[3 Students]</span></div>
+            </div>
+            
+            <div class="short-answer-group">
+                <div><code>print("hello, world!")</code> <span class="count">[2 Students]</span></div>
+            </div>
+            
+            <div class="short-answer-group" style="border-left-color: #EF4444;">
+                <div><code>for i in range(x)</code> <span class="count">[4 Students]</span></div>
+                <div class="warning">⚠️ Missing Trailing Colon</div>
+            </div>
+        </div>
+        
+        <!-- Component D: Question Control Panel -->
+        <div class="control-panel">
+            <h3>Question Control Panel</h3>
+            
+            <div class="control-row">
+                <div class="control-group">
+                    <label>Select Question</label>
+                    <select>
+                        <option>q_syntax_01 - Which line correctly invokes an inline loop?</option>
+                        <option>q_syntax_02 - Complete the function definition...</option>
+                        <option>q_logic_01 - What is the output of this code?</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Instruction Time</label>
+                    <input type="number" value="120" min="30" max="300">
+                    <div class="time-display">02:00</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Quiz Time</label>
+                    <input type="number" value="120" min="30" max="300">
+                    <div class="time-display">02:00</div>
+                </div>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="auto-start">
+                <label for="auto-start">☐ Auto-start quiz when instruction timer expires</label>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-prepare">Prepare Question</button>
+                <button class="btn btn-start">Start Quiz Now</button>
+                <button class="btn btn-lock">Lock Submissions</button>
+                <button class="btn btn-reset">Reset Room</button>
+            </div>
+            
+            <!-- Question Creator -->
+            <div class="question-creator">
+                <button class="toggle-creator">➕ Create New Question</button>
+                
+                <div class="creator-form">
+                    <div class="control-group">
+                        <label>Question Type</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="q-type" value="MCQ" checked>
+                                Multiple Choice (MCQ)
+                            </label>
+                            <label>
+                                <input type="radio" name="q-type" value="SHORT">
+                                Short Answer (SHORT)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Question Prompt</label>
+                        <textarea placeholder="Enter your question or code snippet...">Which line correctly invokes an inline loop in Python?</textarea>
+                    </div>
+                    
+                    <!-- MCQ Options -->
+                    <div class="control-group">
+                        <label>Answer Options</label>
+                        <div class="option-inputs">
+                            <div class="option-row">
+                                <input type="text" placeholder="Option A" value="[x for x in range(10)]">
+                                <input type="radio" name="correct" title="Mark as correct">
+                            </div>
+                            <div class="option-row">
+                                <input type="text" placeholder="Option B" value="for x in range(10): append(x)">
+                                <input type="radio" name="correct" title="Mark as correct">
+                            </div>
+                            <div class="option-row">
+                                <input type="text" placeholder="Option C" value="loop x in range(10)">
+                                <input type="radio" name="correct" title="Mark as correct">
+                            </div>
+                            <div class="option-row">
+                                <input type="text" placeholder="Option D" value="range(10).forEach(x)">
+                                <input type="radio" name="correct" title="Mark as correct">
+                            </div>
+                        </div>
+                        <button class="btn-add-option" style="margin-top: 8px;">+ Add Option</button>
+                    </div>
+                    
+                    <!-- SHORT Answer (hidden by default, shown when SHORT selected) -->
+                    <div class="control-group" style="display: none;">
+                        <label>Expected Answer</label>
+                        <input type="text" placeholder="Enter expected answer (will be normalized)">
+                        <div class="helper-text">Answer matching is case-insensitive and ignores extra whitespace</div>
+                    </div>
+                    
+                    <button class="btn btn-prepare" style="width: auto;">Add Question to Library</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+</body>
+</html>

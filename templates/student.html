@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-header">
+    <div class="student-info">
+        <span><strong>Student:</strong> {{ student_name }}</span>
+        <span><strong>Room:</strong> {{ room_id }}</span>
+    </div>
+    <div class="connection-indicator">
+        <div class="status-dot" id="conn-dot"></div>
+        <span id="conn-text">Connecting...</span>
+    </div>
+</div>
+
+<div class="viewport" id="view-port">
+    <!-- Content injected via JS -->
+    <div class="state-card waiting">
+        <h3>👀 Loading...</h3>
+        <p>Connecting to room...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const ROOM_ID = "{{ room_id }}";
+    const STUDENT_NAME = "{{ student_name }}";
+</script>
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+{% endblock %}
