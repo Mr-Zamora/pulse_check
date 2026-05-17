@@ -428,7 +428,17 @@ function renderDistribution(data) {
         return;
     }
     
-    let html = `<h3>Response Distribution - ${data.question_type}</h3>`;
+    // Get full question prompt
+    const q = currentQuestions.find(x => x.question_id === currentQuestionId);
+    const fullPrompt = q ? q.prompt : '';
+    
+    let html = `
+        <div style="background: #F1F5F9; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3B82F6;">
+            <div style="font-size: 14px; color: #64748B; font-weight: 600; margin-bottom: 8px;">[${data.question_type}] CURRENT QUESTION</div>
+            <div style="font-size: 16px; color: #1E293B; line-height: 1.5;">${fullPrompt}</div>
+        </div>
+        <h3>Response Distribution - ${data.question_type}</h3>
+    `;
     
     if (data.question_type === 'MCQ') {
         const q = currentQuestions.find(x => x.question_id === currentQuestionId);
