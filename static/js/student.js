@@ -386,8 +386,24 @@ function disconnectStudent() {
         return;
     }
     
-    // Redirect to index page
-    window.location.href = '/';
+    // Notify server to mark as disconnected
+    fetch('/api/teacher/delete_student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            room_id: ROOM_ID,
+            student_name: STUDENT_NAME
+        })
+    })
+    .then(() => {
+        // Redirect to index page
+        window.location.href = '/';
+    })
+    .catch(err => {
+        console.error('Error disconnecting:', err);
+        // Redirect anyway
+        window.location.href = '/';
+    });
 }
 
 // --- Interaction ---
