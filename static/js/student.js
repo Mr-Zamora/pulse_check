@@ -89,6 +89,12 @@ function handleStateUpdate(data) {
         responseData = null;
     }
 
+    // Update currentQuestionData whenever available (needed for video display in WAITING state)
+    if (data.question_data) {
+        hasQuestionData = true;
+        currentQuestionData = data.question_data;
+    }
+
     // Re-render if: state changed, question changed, show_responses changed,
     // OR we are ACTIVE but were stuck on "Loading Question..." (question data just arrived)
     const questionJustArrived = currentState === "ACTIVE" && !hasQuestionData && data.question_data !== null;
@@ -100,10 +106,6 @@ function handleStateUpdate(data) {
             attemptAutoSubmit(data);
         } else {
             currentState = data.room_state;
-            if (data.question_data) {
-                hasQuestionData = true;
-                currentQuestionData = data.question_data;
-            }
             renderState(data);
         }
     }
