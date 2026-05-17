@@ -15,8 +15,14 @@ try:
     from admin import ADMIN_USERNAME, ADMIN_PASSWORD, SECRET_KEY
     app = Flask(__name__)
     app.secret_key = SECRET_KEY
-except ImportError:
-    print("WARNING: admin.py not found! Copy admin.py.example to admin.py and set credentials.")
+except ImportError as e:
+    print(f"WARNING: admin.py not found! Copy admin.py.example to admin.py and set credentials. Error: {e}")
+    app = Flask(__name__)
+    app.secret_key = 'MY_SECRET_KEY_IS_A_LONG_RANDOM_STRING'
+    ADMIN_USERNAME = "admin"
+    ADMIN_PASSWORD = "changeme"
+except Exception as e:
+    print(f"ERROR loading admin.py: {e}")
     app = Flask(__name__)
     app.secret_key = 'MY_SECRET_KEY_IS_A_LONG_RANDOM_STRING'
     ADMIN_USERNAME = "admin"
