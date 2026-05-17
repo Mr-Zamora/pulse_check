@@ -131,9 +131,21 @@ function deleteStudent(studentName) {
 }
 
 // --- Show Responses Toggle ---
+function updateShowResponsesButton() {
+    const btn = document.getElementById('toggle-responses-btn');
+    if (!btn) return;
+    
+    if (showResponsesEnabled) {
+        btn.textContent = 'Hide Responses';
+        btn.style.background = '#EF4444';
+    } else {
+        btn.textContent = 'Show Responses';
+        btn.style.background = '';
+    }
+}
+
 function toggleShowResponses() {
     showResponsesEnabled = !showResponsesEnabled;
-    const btn = document.getElementById('toggle-responses-btn');
     
     fetch('/api/teacher/toggle_responses', {
         method: 'POST',
@@ -146,13 +158,10 @@ function toggleShowResponses() {
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
+            updateShowResponsesButton();
             if (showResponsesEnabled) {
-                btn.textContent = 'Hide Responses';
-                btn.style.background = '#EF4444';
                 showToast('Responses now visible to students', 'success');
             } else {
-                btn.textContent = 'Show Responses';
-                btn.style.background = '';
                 showToast('Responses hidden from students', 'info');
             }
         } else {
@@ -216,6 +225,15 @@ function pollServer() {
             
             currentRoomState = roomData.room_state;
             currentQuestionId = roomData.current_question_id;
+            
+            // Sync show_responses button with server state
+            if (roomData.show_responses !== undefined) {
+                const serverShowResponses = roomData.show_responses;
+                if (serverShowResponses !== showResponsesEnabled) {
+                    showResponsesEnabled = serverShowResponses;
+                    updateShowResponsesButton();
+                }
+            }
             
             updateRibbonState(roomData);
             fetchResponses();
