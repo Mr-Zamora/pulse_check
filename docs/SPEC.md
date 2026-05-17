@@ -67,6 +67,7 @@ One row per active room. Upserted on every teacher control action.
 | `quiz_start` | REAL | Unix timestamp when quiz timer started |
 | `quiz_duration` | INTEGER | Seconds allocated for quiz phase |
 | `auto_start` | INTEGER | Boolean flag (0/1) for auto-transition |
+| `show_responses` | INTEGER | Boolean flag (0/1) to control response visibility to students |
 
 ### 3.2 SQLite: `student_last_seen` table
 
@@ -90,10 +91,13 @@ Contains the structural definitions of the micro-quizzes. Pre-configured before 
 | `room_id` | String | Links question to a specific active room | `1234` |
 | `type` | String | Dictates UI rendering (`MCQ` or `SHORT`) | `MCQ` |
 | `prompt` | String | The question or code snippet context | `Which line correctly invokes an inline loop?` |
-| `options` | String (JSON Array) | Pipe-delimited string or serialized JSON array | `A: [x for x in y]|B: for x in y: append(x)` |
+| `options` | String (Pipe-delimited) | Pipe-delimited options (empty for SHORT questions) | `A: [x for x in y]|B: for x in y: append(x)` |
 | `correct_answer` | String | The strict evaluation metric for grading | `A` |
+| `video_url` | String (Optional) | YouTube URL for question introduction video | `https://youtu.be/VIDEO_ID` |
 
-### 3.2 `responses.csv`
+**Note:** SHORT questions must include an empty `options` field (two commas `,,`) to maintain consistent 7-column structure. See `docs/CSV_RULES.md` for formatting details.
+
+### 3.4 `responses.csv`
 
 An append-only historical log tracking every active node submission.
 
@@ -104,7 +108,9 @@ An append-only historical log tracking every active node submission.
 | `student_name` | String | Sanitized student display name | `Nina M.` |
 | `question_id` | String | Target question foreign identifier | `q_syntax_01` |
 | `answer` | String | The exact raw payload submitted | `A` or `print(f"Val: {x}")` |
-| `is_correct` | Boolean | Binary grade indicator determined on write | `True` |
+| `is_correct` | String | Binary grade indicator determined on write | `True` or `DELETED` |
+
+**Note:** For SHORT questions, old answers are deleted before new submissions to allow resubmission. Deleted responses are marked with `is_correct='DELETED'` for audit trail.
 
 ---
 
@@ -208,16 +214,39 @@ All timers are **server-side** tracked using timestamps in `configuration.py`.
 - `/api/teacher/control` activates existing questions from CSV
 - Optional `/api/teacher/add_question` endpoint for spontaneous question creation
 
-**Short Answer Grading:**
+**Short Answer Grading & Resubmission:**
 - Uses **normalized matching** (lowercase, whitespace-stripped) for `SHORT` type questions
 - Both student answer and `correct_answer` normalized before comparison
 - Teacher dashboard displays all unique normalized answers grouped with counts
+- **SHORT questions allow resubmission:** Students can update their answers; old answer is deleted before new one is saved
+- MCQ questions remain single-submission only (form disabled after submission)
 
 **Student Connection Tracking:**
-- Server maintains in-memory dict: `{student_name: last_poll_timestamp}`
+- Server maintains SQLite table `student_last_seen`: `{room_id, student_name, last_seen}`
 - Updated on every `/api/room/status` request
 - Student marked as disconnected if no poll received in last 10 seconds (5× poll interval)
 - Connection status included in `/api/teacher/responses` payload
+
+**Resubmission Prevention (MCQ):**
+- Server tracks `has_submitted` flag per student per question
+- `/api/room/status` includes `has_submitted` boolean in response
+- Student frontend disables MCQ form after submission (persists across browser refresh)
+- SHORT questions exempt from this restriction (allow updates)
+
+**Response Visibility Control:**
+- Teacher can toggle `show_responses` flag via dashboard button
+- When enabled, students see response distribution during LOCKED state
+- Automatically disabled when preparing new questions (pedagogical best practice)
+- Frontend syncs state via polling to update student UI in real-time
+
+**Video Integration:**
+- Optional YouTube video URLs in `questions.csv` (`video_url` column)
+- During WAITING state, students see embedded YouTube video if `video_url` exists
+- Video auto-plays when question is prepared
+- Falls back to "Eyes on Teacher 👀" message if no video URL provided
+- Video stops when quiz transitions to ACTIVE state
+- Supports multiple YouTube URL formats (youtu.be, youtube.com/watch, youtube.com/embed)
+- See `docs/VIDEO.md` for complete integration guide
 
 ---
 
@@ -229,7 +258,7 @@ All timers are **server-side** tracked using timestamps in `configuration.py`.
 | `/join` | `POST` | `form-data` | `name`, `room_id` | Validates session, writes values into encrypted cookie Flask `session`, redirects to `/room/<room_id>`. |
 | `/room/<room_id>` | `GET` | `text/html` | None | Authenticates session context. Renders `student.html` structural baseline. |
 | `/teacher` | `GET` | `text/html` | None | Base control viewport rendering `teacher.html`. No authentication required. |
-| `/api/room/status` | `GET` | `application/json` | `room_id` (query param) | Fetches room state dict for `room_id`. Updates student last-seen timestamp. Returns state, current question, time remaining. |
+| `/api/room/status` | `GET` | `application/json` | `room_id`, `student_name` (query params) | Fetches room state dict for `room_id`. Updates student last-seen timestamp. Returns state, current question, time remaining, `has_submitted` flag, `show_responses` flag, and question data (including `video_url`). |
 | `/api/teacher/control` | `POST` | `application/json` | `{"action": "prepare\|start\|lock\|reset", "q_id": "q1", "room_id": "1234", "instruction_time": 120, "quiz_time": 120, "auto_start": false}` | Mutates room state. Actions: `prepare` (load question, start instruction timer), `start` (begin quiz manually), `lock` (freeze submissions), `reset` (return to waiting). |
 | `/api/teacher/add_question` | `POST` | `application/json` | `{"room_id": "1234", "type": "MCQ", "prompt": "...", "options": [...], "correct_answer": "A"}` | Acquires lock, appends new question to `questions.csv`, returns `question_id`. |
 | `/api/submit` | `POST` | `application/json` | `{"q_id": "q1", "ans": "text", "room_id": "1234", "student_name": "..."}` | Evaluates correctness (normalized for SHORT type), acquires `threading.Lock()`, appends to `responses.csv`, returns status. |
@@ -245,8 +274,12 @@ The interface relies on clean, high-contrast, structured interfaces. No flashy g
 
 * **Container Structure:** Divided into a steady Header Banner (Displaying Student Name, Room ID, and Connection Pulse indicator) and a single, central multi-state viewport container (`#view-port`).
 * **Dynamic CSS Clamping:**
-  * State `WAITING`: Displays a large, centered card styled with a soft off-white background, subtle dark text: *"Slide Instruction Active. Watch the presentation and engage with the instructor."*
+  * State `WAITING`: 
+    * **With video URL:** Displays embedded YouTube video player (16:9 aspect ratio, auto-play enabled) with message "The question will appear when the teacher starts the quiz"
+    * **Without video URL:** Displays a large, centered card styled with a soft off-white background, subtle dark text: *"👀 Eyes on Teacher - Listen to the presentation and engage with the instructor."*
   * State `ACTIVE`: The card transitions instantly via structural DOM swapping. Renders the prompt clearly using a monospaced font segment for code blocks. Multiple choice arrays use substantial touch targets (`min-height: 48px`).
+    * **SHORT questions:** Form remains visible after submission with "Update Answer" button, allowing students to revise their response
+    * **MCQ questions:** Form disabled after submission, shows "✅ Answer submitted successfully" message
 
 ### 6.2 The Teacher Dashboard (`teacher.html`)
 
@@ -260,9 +293,18 @@ The interface relies on clean, high-contrast, structured interfaces. No flashy g
     * **During ACTIVE (quiz phase):** Shows quiz timer with label "Quiz Time" (color: `#F59E0B` amber) - *Visible to both teacher and students*
     * **During LOCKED:** Shows "Review Mode" text (color: `#10B981` green)
   * **Right:** Horizontal stacked data displaying total headcount velocity: `Submitted: 14 / 18` (only shown during ACTIVE/LOCKED states).
+    * **All-Submitted Indicator:** When all students have submitted, ribbon right section highlights with green background and shows "✓ ALL SUBMITTED - Ready to lock"
+    * **Lock Button Enhancement:** Lock button becomes more prominent (larger, pulsing animation) when all students submitted
+    * **Show Responses Toggle:** Button to control whether students can see response distribution during LOCKED state
+      * Auto-disabled when preparing new questions
+      * Syncs across all student clients via polling
 
 #### Component B: The Distribution View (The Left Partition)
 
+* **Full Question Display Box:** Shows complete question text with type indicator (`[MCQ]` or `[SHORT]`)
+  * **For SHORT questions:** Displays model answer in green-highlighted box below question text
+  * Label: "✓ Model Answer:" with full expected answer visible
+  * Allows teacher to compare student responses against model during review
 * Splits into real-time visual parsers depending on the active question's payload metadata.
 * **MCQ Rendering Matrix:** Uses simple CSS-width horizontal block bars to convey percentages instantly:
 
