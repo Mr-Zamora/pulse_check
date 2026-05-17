@@ -3,6 +3,8 @@ let currentState = null;
 let currentQuestionId = null;
 let hasSubmitted = false;
 let timeRemaining = 0;
+let showResponses = false;
+let responseData = null;
 
 const viewport = document.getElementById('view-port');
 const connDot = document.getElementById('conn-dot');
@@ -54,14 +56,26 @@ function handleStateUpdate(data) {
         currentQuestionId = data.current_question_id;
         hasSubmitted = false;
         hasQuestionData = false;
+        responseData = null;
     }
 
-    // Re-render if: state changed, question changed,
+    // Track show_responses state
+    const showResponsesChanged = data.show_responses !== showResponses;
+    showResponses = data.show_responses;
+    
+    // Fetch response data if show_responses is enabled
+    if (showResponses && currentQuestionId) {
+        fetchResponseData();
+    } else if (!showResponses) {
+        responseData = null;
+    }
+
+    // Re-render if: state changed, question changed, show_responses changed,
     // OR we are ACTIVE but were stuck on "Loading Question..." (question data just arrived)
     const questionJustArrived = currentState === "ACTIVE" && !hasQuestionData && data.question_data !== null;
     const transitioningToLocked = currentState === "ACTIVE" && data.room_state === "LOCKED" && !hasSubmitted;
 
-    if (data.room_state !== currentState || questionChanged || questionJustArrived) {
+    if (data.room_state !== currentState || questionChanged || questionJustArrived || showResponsesChanged) {
         if (transitioningToLocked) {
             // Try to auto-submit before rendering the locked screen
             attemptAutoSubmit(data);
@@ -71,6 +85,21 @@ function handleStateUpdate(data) {
             renderState(data);
         }
     }
+}
+
+function fetchResponseData() {
+    fetch(`/api/teacher/responses?room_id=${ROOM_ID}&question_id=${currentQuestionId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                responseData = data;
+                // Re-render to show updated response data
+                fetch(`/api/room/status?room_id=${ROOM_ID}&student_name=${encodeURIComponent(STUDENT_NAME)}`)
+                    .then(r => r.json())
+                    .then(d => renderState(d));
+            }
+        })
+        .catch(err => console.error('Error fetching responses:', err));
 }
 
 function renderState(data) {
@@ -147,6 +176,11 @@ function showActiveState(qData) {
         }
     }
 
+    let responsesHTML = '';
+    if (showResponses && responseData) {
+        responsesHTML = renderResponseDistribution();
+    }
+
     viewport.innerHTML = `
         <h3 style="margin-bottom: 20px; color: #64748B;">State: ACTIVE</h3>
         <div class="question-container">
@@ -155,6 +189,7 @@ function showActiveState(qData) {
                 ${qData.prompt.includes('`') ? renderCodeSnippet(qData.prompt) : qData.prompt}
             </div>
             ${formHTML}
+            ${responsesHTML}
         </div>
     `;
     updateTimerDisplay();
@@ -163,6 +198,68 @@ function showActiveState(qData) {
 function renderCodeSnippet(prompt) {
     // Basic backtick replacement for code snippet styling
     return prompt.replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function renderResponseDistribution() {
+    if (!responseData || !responseData.question_data) return '';
+    
+    let html = `<div style="margin-top: 30px; padding: 20px; background: #F8FAFC; border-radius: 8px; border: 2px solid #CBD5E1;">
+        <h4 style="margin: 0 0 15px 0; color: #475569;">📊 Class Response Distribution</h4>`;
+    
+    if (responseData.question_type === 'MCQ') {
+        const qData = responseData.question_data;
+        const options = qData.options.split('|');
+        const correctOpt = qData.correct_answer.trim();
+        const total = responseData.total_submitted;
+        
+        options.forEach(opt => {
+            let optVal = opt.split(':')[0].trim();
+            let count = responseData.stats[optVal] || 0;
+            let pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            let isCorrect = (optVal === correctOpt);
+            
+            let barColor = isCorrect ? '#10B981' : '#EF4444';
+            let labelSuffix = isCorrect ? ' ✓ (Correct)' : '';
+            
+            html += `
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px;">
+                        <span style="font-weight: 500;">${opt}${labelSuffix}</span>
+                        <span><strong>${pct}%</strong> (${count}/${total})</span>
+                    </div>
+                    <div style="background: #E2E8F0; border-radius: 4px; height: 24px; overflow: hidden;">
+                        <div style="background: ${barColor}; height: 100%; width: ${pct}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+        });
+        
+    } else if (responseData.question_type === 'SHORT') {
+        const qData = responseData.question_data;
+        let correctNorm = qData ? qData.correct_answer.toLowerCase().trim() : "";
+        
+        const entries = Object.entries(responseData.stats).sort((a,b) => b[1].count - a[1].count);
+        
+        if (entries.length === 0) {
+            html += `<p style="color: #94A3B8; margin: 10px 0;">No submissions yet.</p>`;
+        }
+        
+        entries.forEach(([norm, info]) => {
+            let isCorrect = (norm === correctNorm);
+            let borderColor = isCorrect ? '#10B981' : '#EF4444';
+            let icon = isCorrect ? '✓' : '✗';
+            
+            html += `
+                <div style="margin-bottom: 10px; padding: 10px; background: white; border-left: 4px solid ${borderColor}; border-radius: 4px;">
+                    <code style="font-size: 14px;">${info.raw}</code> 
+                    <span style="color: #64748B; margin-left: 8px;">${icon} [${info.count} student${info.count > 1 ? 's' : ''}]</span>
+                </div>
+            `;
+        });
+    }
+    
+    html += `</div>`;
+    return html;
 }
 
 // --- Auto-Submit on Lock ---

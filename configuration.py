@@ -35,7 +35,8 @@ def init_db():
             instruction_duration INTEGER DEFAULT 120,
             quiz_start          REAL,
             quiz_duration       INTEGER DEFAULT 120,
-            auto_start          INTEGER DEFAULT 0
+            auto_start          INTEGER DEFAULT 0,
+            show_responses      INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS student_last_seen (
@@ -45,5 +46,14 @@ def init_db():
             PRIMARY KEY (room_id, student_name)
         );
     """)
+    
+    # Migration: Add show_responses column if it doesn't exist
+    try:
+        conn.execute("SELECT show_responses FROM room_states LIMIT 1")
+    except sqlite3.OperationalError:
+        # Column doesn't exist, add it
+        conn.execute("ALTER TABLE room_states ADD COLUMN show_responses INTEGER DEFAULT 0")
+        conn.commit()
+    
     conn.commit()
     conn.close()

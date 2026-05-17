@@ -2,6 +2,7 @@ const POLL_INTERVAL = 2000;
 let currentQuestions = [];
 let currentRoomState = null;
 let currentQuestionId = null;
+let showResponsesEnabled = false;
 
 // UI Elements
 const qSelect = document.getElementById('q-select');
@@ -69,6 +70,43 @@ function updateTimeDisplays() {
     document.getElementById('quiz-time-disp').textContent = format(quizTime.value);
 }
 
+// --- Show Responses Toggle ---
+function toggleShowResponses() {
+    showResponsesEnabled = !showResponsesEnabled;
+    const btn = document.getElementById('toggle-responses-btn');
+    
+    fetch('/api/teacher/toggle_responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            room_id: ROOM_ID,
+            show: showResponsesEnabled
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (showResponsesEnabled) {
+                btn.textContent = 'Hide Responses';
+                btn.style.background = '#EF4444';
+                showToast('Responses now visible to students', 'success');
+            } else {
+                btn.textContent = 'Show Responses';
+                btn.style.background = '';
+                showToast('Responses hidden from students', 'info');
+            }
+        } else {
+            showToast("Error toggling responses: " + data.message, "error");
+            showResponsesEnabled = !showResponsesEnabled; // revert on error
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showToast("Network error toggling responses.", "error");
+        showResponsesEnabled = !showResponsesEnabled; // revert on error
+    });
+}
+
 // --- Control API ---
 function sendControl(action) {
     const payload = {
@@ -89,6 +127,15 @@ function sendControl(action) {
     .then(data => {
         if (data.status === 'success') {
             showToast(`Action '${action}' applied`, 'success');
+            
+            // Reset show responses button state when room is reset
+            if (action === 'reset') {
+                showResponsesEnabled = false;
+                const btn = document.getElementById('toggle-responses-btn');
+                btn.textContent = 'Show Responses';
+                btn.style.background = '';
+            }
+            
             pollServer(); // force instant update
         } else {
             showToast("Error: " + data.message, "error");

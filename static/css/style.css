@@ -223,6 +223,11 @@
             margin-right: 12px;
             width: 18px;
             height: 18px;
+            min-width: 18px;
+            min-height: 18px;
+            max-width: 18px;
+            max-height: 18px;
+            flex-shrink: 0;
         }
 
         .short-answer-input {
@@ -573,6 +578,15 @@
 
         .btn-lock:hover {
             background: #D97706;
+        }
+
+        .btn-show-responses {
+            background: #8B5CF6;
+            color: white;
+        }
+
+        .btn-show-responses:hover {
+            background: #7C3AED;
         }
 
         .btn-reset {

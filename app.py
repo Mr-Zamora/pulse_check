@@ -255,7 +255,8 @@ def room_status():
         "current_question_id": state['current_q'],
         "time_remaining_seconds": int(time_remaining),
         "timer_type": timer_type,
-        "question_data": question_data
+        "question_data": question_data,
+        "show_responses": bool(state.get('show_responses', 0))
     })
 
 
@@ -294,11 +295,31 @@ def teacher_control():
             state='WAITING',
             current_q=None,
             instruction_start=None,
-            quiz_start=None
+            quiz_start=None,
+            show_responses=0
         )
 
     new_state = get_room_state(room_id)['state']
     return jsonify({"status": "success", "message": f"Action {action} processed", "new_state": new_state})
+
+
+@app.route('/api/teacher/toggle_responses', methods=['POST'])
+def toggle_responses():
+    try:
+        data = request.get_json()
+        room_id = data.get('room_id')
+        show = data.get('show', False)
+        
+        if not room_id:
+            return jsonify({"status": "error", "message": "Missing room_id"}), 400
+        
+        init_room(room_id)
+        set_room_state(room_id, show_responses=1 if show else 0)
+        
+        return jsonify({"status": "success", "show_responses": show})
+    except Exception as e:
+        print(f"Error in toggle_responses: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # ===========================================================================
@@ -430,6 +451,7 @@ def get_responses():
     return jsonify({
         "status": "success",
         "question_type": target_q['type'] if target_q else None,
+        "question_data": target_q,
         "stats": stats,
         "student_states": student_states,
         "total_submitted": len(responses)
