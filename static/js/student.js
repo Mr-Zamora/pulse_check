@@ -172,11 +172,15 @@ function showActiveState(qData) {
 
     let formHTML = '';
     
-    // Preserve textarea value before re-rendering
+    // Preserve textarea value and focus state before re-rendering
     let preservedTextValue = '';
+    let preservedCursorPos = 0;
+    let hadFocus = false;
     const existingTextarea = document.getElementById('short-answer');
     if (existingTextarea) {
         preservedTextValue = existingTextarea.value;
+        preservedCursorPos = existingTextarea.selectionStart;
+        hadFocus = document.activeElement === existingTextarea;
     }
     
     if (hasSubmitted) {
@@ -237,11 +241,16 @@ function showActiveState(qData) {
         </div>
     `;
     
-    // Restore textarea value after re-rendering
+    // Restore textarea value, cursor position, and focus after re-rendering
     if (preservedTextValue && qData.type === 'SHORT' && !hasSubmitted) {
         const newTextarea = document.getElementById('short-answer');
         if (newTextarea) {
             newTextarea.value = preservedTextValue;
+            // Restore cursor position and focus
+            if (hadFocus) {
+                newTextarea.focus();
+                newTextarea.setSelectionRange(preservedCursorPos, preservedCursorPos);
+            }
         }
     }
     
