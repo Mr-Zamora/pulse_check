@@ -6,6 +6,7 @@ let hasSubmitted = false;
 let timeRemaining = 0;
 let showResponses = false;
 let responseData = null;
+let lastStateData = null;
 
 const viewport = document.getElementById('view-port');
 const connDot = document.getElementById('conn-dot');
@@ -60,6 +61,9 @@ let hasQuestionData = false;
 
 function handleStateUpdate(data) {
     if (data.status !== "success") return;
+    
+    // Store the full state data for use in rendering
+    lastStateData = data;
     
     // Update local timer state from server truth
     timeRemaining = data.time_remaining_seconds;
