@@ -222,6 +222,8 @@ def join():
         return render_template('index.html', error="Invalid room ID. Use only letters, numbers, hyphens and underscores.")
     if not _VALID_NAME.match(student_name):
         return render_template('index.html', error="Invalid name. Use only letters, numbers, spaces and basic punctuation.")
+    if not read_questions(room_id):
+        return render_template('index.html', error="Room not found. Check your room code and try again.")
     session['student_name'] = student_name
     session['room_id'] = room_id
     init_room(room_id)
