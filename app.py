@@ -162,7 +162,8 @@ def get_room_state(room_id):
 
 _ROOM_STATE_COLUMNS = frozenset({
     'state', 'current_q', 'instruction_start', 'instruction_duration',
-    'quiz_start', 'quiz_duration', 'auto_start', 'show_responses'
+    'quiz_start', 'quiz_duration', 'auto_start', 'show_responses',
+    'explainer_text', 'explainer_timestamp'
 })
 
 def set_room_state(room_id, **kwargs):
