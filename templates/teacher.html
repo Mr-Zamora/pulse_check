@@ -4,14 +4,16 @@
 {% if not room_id %}
 <div class="landing-container">
     <h2>Teacher Portal</h2>
-    <p>Manage a classroom session</p>
+    <p>Open an existing room or create a new one by entering a room code.</p>
     <form action="/teacher" method="GET">
         <div class="form-group">
-            <label for="room-id">Room ID to Manage</label>
-            <input type="text" id="room-id" name="room_id" placeholder="Enter room code" required>
+            <label for="room-id">Room Code</label>
+            <input type="text" id="room-id" name="room_id" placeholder="e.g. 2025 or science-p3" required pattern="[a-zA-Z0-9_\-]{1,50}" title="Letters, numbers, hyphens and underscores only">
         </div>
-        <button type="submit" class="btn-primary">Open Dashboard</button>
+        <button type="submit" class="btn-primary">Open / Create Room</button>
     </form>
+    <p style="margin-top:16px; font-size:13px; color:#64748B;">New room? Enter a new code — add questions once inside and students can join.</p>
+    <p style="margin-top:8px;"><a href="/teacher/logout" style="color:#94A3B8; font-size:13px;">Logout</a></p>
 </div>
 {% else %}
 <!-- Teacher Dashboard Grid -->
@@ -25,6 +27,10 @@
     </div>
     <div class="ribbon-right">
         Submitted: <strong id="ribbon-submitted">0</strong> / <span id="ribbon-total">0</span>
+        &nbsp;·&nbsp;
+        <a href="/teacher" style="color:#94A3B8; font-size:12px; text-decoration:none;">Switch Room</a>
+        &nbsp;·&nbsp;
+        <a href="/teacher/logout" style="color:#94A3B8; font-size:12px; text-decoration:none;">Logout</a>
     </div>
 </div>
 

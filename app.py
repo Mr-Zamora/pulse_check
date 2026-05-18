@@ -87,7 +87,7 @@ def read_responses(room_id=None, question_id=None):
 
 def write_question(question_dict):
     global questions_cache
-    fieldnames = ['question_id', 'room_id', 'type', 'prompt', 'options', 'correct_answer']
+    fieldnames = ['question_id', 'room_id', 'type', 'prompt', 'options', 'correct_answer', 'video_url']
     with csv_lock:
         file_exists = os.path.exists(QUESTIONS_CSV)  # checked inside lock to avoid TOCTOU
         with open(QUESTIONS_CSV, 'a', newline='', encoding='utf-8') as f:
