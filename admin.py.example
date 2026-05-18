@@ -3,6 +3,7 @@
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "changeme"  # CHANGE THIS!
+TEACHER_PASSWORD = "teacher"  # CHANGE THIS! Students must not know this.
 SECRET_KEY = "dev-secret-key-change-in-production"  # CHANGE THIS!
 
 # To generate a secure secret key, run:

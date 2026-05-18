@@ -28,6 +28,11 @@ except Exception as e:
     ADMIN_USERNAME = "admin"
     ADMIN_PASSWORD = "changeme"
 
+try:
+    from admin import TEACHER_PASSWORD
+except (ImportError, Exception):
+    TEACHER_PASSWORD = "teacher"  # fallback — must be changed in admin.py
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = os.path.join(BASE_DIR, 'database')
@@ -233,8 +238,32 @@ def room(room_id):
     return render_template('student.html', student_name=session['student_name'], room_id=room_id)
 
 
+@app.route('/teacher/login', methods=['GET', 'POST'])
+def teacher_login():
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if password == TEACHER_PASSWORD:
+            session['teacher_authenticated'] = True
+            room_id = request.form.get('room_id', '')
+            return redirect(f'/teacher?room_id={room_id}' if room_id else '/teacher')
+        return render_template('teacher_login.html', error="Invalid password",
+                               room_id=request.form.get('room_id', ''))
+    if session.get('teacher_authenticated'):
+        return redirect('/teacher')
+    return render_template('teacher_login.html', room_id=request.args.get('room_id', ''))
+
+
+@app.route('/teacher/logout')
+def teacher_logout():
+    session.pop('teacher_authenticated', None)
+    return redirect('/teacher/login')
+
+
 @app.route('/teacher')
 def teacher():
+    if not session.get('teacher_authenticated'):
+        room_id = request.args.get('room_id', '')
+        return redirect(f'/teacher/login?room_id={room_id}')
     room_id = request.args.get('room_id')
     return render_template('teacher.html', room_id=room_id)
 
@@ -340,10 +369,33 @@ def room_status():
 
 
 # ===========================================================================
+# Route Decorators
+# ===========================================================================
+
+def teacher_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('teacher_authenticated'):
+            return jsonify({"status": "error", "message": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_authenticated'):
+            return jsonify({"status": "error", "message": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# ===========================================================================
 # Routes — Teacher Control API
 # ===========================================================================
 
 @app.route('/api/teacher/control', methods=['POST'])
+@teacher_required
 def teacher_control():
     data = request.get_json()
     action = data.get('action')
@@ -384,6 +436,7 @@ def teacher_control():
 
 
 @app.route('/api/teacher/delete_student', methods=['POST'])
+@teacher_required
 def delete_student():
     try:
         data = request.get_json()
@@ -411,6 +464,7 @@ def delete_student():
 
 
 @app.route('/api/teacher/delete_response', methods=['POST'])
+@teacher_required
 def delete_response():
     try:
         data = request.get_json()
@@ -436,6 +490,7 @@ def delete_response():
 
 
 @app.route('/api/teacher/toggle_responses', methods=['POST'])
+@teacher_required
 def toggle_responses():
     try:
         data = request.get_json()
@@ -459,6 +514,7 @@ def toggle_responses():
 # ===========================================================================
 
 @app.route('/api/teacher/questions')
+@teacher_required
 def get_questions():
     room_id = request.args.get('room_id')
     if not room_id:
@@ -467,6 +523,7 @@ def get_questions():
 
 
 @app.route('/api/teacher/add_question', methods=['POST'])
+@teacher_required
 def add_question():
     data = request.get_json()
     room_id = data.get('room_id')
@@ -547,6 +604,7 @@ def submit():
 # ===========================================================================
 
 @app.route('/api/teacher/responses')
+@teacher_required
 def get_responses():
     room_id = request.args.get('room_id')
     q_id = request.args.get('question_id')
@@ -614,16 +672,6 @@ def get_responses():
 # ===========================================================================
 # Admin Routes & API
 # ===========================================================================
-
-def admin_required(f):
-    """Decorator to protect admin endpoints"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('admin_authenticated'):
-            return jsonify({"status": "error", "message": "Unauthorized"}), 401
-        return f(*args, **kwargs)
-    return decorated_function
-
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
