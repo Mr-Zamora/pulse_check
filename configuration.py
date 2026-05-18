@@ -132,8 +132,9 @@ def init_db():
         if existing == 0:
             with open(csv_path, 'r', encoding='utf-8') as _f:
                 for row in _csv.DictReader(_f):
+                    # Use INSERT OR IGNORE to skip duplicates
                     conn.execute(
-                        "INSERT INTO responses "
+                        "INSERT OR IGNORE INTO responses "
                         "(timestamp, room_id, student_name, question_id, answer, is_correct) "
                         "VALUES (?, ?, ?, ?, ?, ?)",
                         (row.get('timestamp', ''), row.get('room_id', ''),

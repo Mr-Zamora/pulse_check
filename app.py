@@ -14,14 +14,17 @@ from configuration import csv_lock, get_db, init_db, DISCONNECT_TIMEOUT
 try:
     import google.generativeai as genai
     from admin import GEMINI_API_KEY
+    print(f"DEBUG: GEMINI_API_KEY loaded: {GEMINI_API_KEY[:20]}..." if GEMINI_API_KEY else "DEBUG: GEMINI_API_KEY is empty")
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
         GEMINI_AVAILABLE = True
+        print("SUCCESS: Gemini AI configured successfully!")
     else:
         GEMINI_AVAILABLE = False
-except (ImportError, AttributeError):
+        print("WARNING: GEMINI_API_KEY is empty in admin.py")
+except (ImportError, AttributeError) as e:
     GEMINI_AVAILABLE = False
-    print("INFO: Gemini AI not configured. AI Explainer feature will be disabled.")
+    print(f"INFO: Gemini AI not configured. Error: {e}")
 
 # Admin credentials - stored in admin.py (NOT committed to Git)
 # Copy admin.py.example to admin.py and set your own credentials
