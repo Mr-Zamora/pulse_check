@@ -286,6 +286,41 @@ function sendControl(action) {
     });
 }
 
+// --- AI Explainer ---
+function generateAIExplainer() {
+    const selectedQuestionId = qSelect.value;
+    
+    if (!selectedQuestionId) {
+        showToast("Please select a question first", "error");
+        return;
+    }
+    
+    // Show loading state
+    showToast("Generating AI explanation... (this may take 2-3 seconds)", "info");
+    
+    fetch('/api/teacher/generate_explainer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            room_id: ROOM_ID,
+            question_id: selectedQuestionId
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast("AI Explainer sent to students! ✨", "success");
+            pollServer(); // Update immediately
+        } else {
+            showToast("Error: " + data.message, "error");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showToast("Failed to generate AI explainer. Check console for details.", "error");
+    });
+}
+
 // --- Polling Engine ---
 function pollServer() {
     fetch(`/api/room/status?room_id=${ROOM_ID}&role=teacher`)

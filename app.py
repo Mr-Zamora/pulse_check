@@ -10,6 +10,19 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from configuration import csv_lock, get_db, init_db, DISCONNECT_TIMEOUT
 
+# Gemini AI for explainer feature (optional)
+try:
+    import google.generativeai as genai
+    from admin import GEMINI_API_KEY
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        GEMINI_AVAILABLE = True
+    else:
+        GEMINI_AVAILABLE = False
+except (ImportError, AttributeError):
+    GEMINI_AVAILABLE = False
+    print("INFO: Gemini AI not configured. AI Explainer feature will be disabled.")
+
 # Admin credentials - stored in admin.py (NOT committed to Git)
 # Copy admin.py.example to admin.py and set your own credentials
 try:
@@ -374,7 +387,8 @@ def room_status():
         "timer_type": timer_type,
         "question_data": question_data,
         "show_responses": bool(state.get('show_responses', 0)),
-        "has_submitted": has_submitted
+        "has_submitted": has_submitted,
+        "explainer_text": state.get('explainer_text')
     })
 
 
@@ -429,7 +443,7 @@ def teacher_control():
             show_responses=0  # Auto-disable show_responses for new question
         )
     elif action == 'start':
-        set_room_state(room_id, state='ACTIVE', quiz_start=now)
+        set_room_state(room_id, state='ACTIVE', quiz_start=now, explainer_text=None)
     elif action == 'lock':
         set_room_state(room_id, state='LOCKED')
     elif action == 'reset':
@@ -497,6 +511,90 @@ def delete_response():
     except Exception as e:
         print(f"Error deleting response: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/teacher/generate_explainer', methods=['POST'])
+@teacher_required
+def generate_explainer():
+    """Generate AI explanation for a question"""
+    try:
+        if not GEMINI_AVAILABLE:
+            return jsonify({
+                "status": "error", 
+                "message": "AI Explainer not configured. Add GEMINI_API_KEY to admin.py"
+            }), 503
+        
+        data = request.get_json()
+        room_id = data.get('room_id')
+        question_id = data.get('question_id')
+        
+        if not room_id or not question_id:
+            return jsonify({"status": "error", "message": "Missing parameters"}), 400
+        
+        # Get question from CSV
+        questions = read_questions(room_id)
+        question = next((q for q in questions if q['question_id'] == question_id), None)
+        
+        if not question:
+            return jsonify({"status": "error", "message": "Question not found"}), 404
+        
+        # Generate explainer using Gemini
+        explainer_text = generate_ai_explainer(question)
+        
+        # Store in database
+        db = get_db()
+        db.execute("""
+            UPDATE room_states 
+            SET explainer_text = ?, explainer_timestamp = ?
+            WHERE room_id = ?
+        """, (explainer_text, time.time(), room_id))
+        db.commit()
+        
+        return jsonify({
+            "status": "success",
+            "explainer": explainer_text
+        })
+        
+    except Exception as e:
+        print(f"Error generating explainer: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+def generate_ai_explainer(question):
+    """Call Gemini API to generate pedagogical explanation"""
+    model = genai.GenerativeModel('gemini-pro')
+    
+    prompt = f"""### ROLE ###
+You are a high school teacher preparing students for a quiz question.
+Your audience is high school students aged 15-18.
+Your goal is to teach them the concepts they need to answer the question correctly.
+
+### CONTEXT ###
+This is part of a live classroom quiz system. Students will see your explanation
+for 30-60 seconds before the question appears. They need just enough information
+to understand the concepts, but you should NOT give away the answer directly.
+
+Question Type: {question['type']}
+- If MCQ: Students will choose from multiple options
+- If SHORT: Students will write a brief answer
+
+### TASK ###
+Write a clear, concise explanation (100-150 words, 1-2 paragraphs) that:
+
+1. **Teaches the concept:** Explain the key ideas students need to understand
+2. **Provides context:** Give relevant background or examples
+3. **Guides thinking:** Help them approach the question logically
+4. **Avoids spoilers:** Do NOT reveal the correct answer or make it obvious
+5. **Uses simple language:** Appropriate for high school students
+
+### INPUT ###
+* **Question:** {question['prompt']}
+* **Type:** {question['type']}
+
+Write your explanation now:"""
+    
+    response = model.generate_content(prompt)
+    return response.text.strip()
 
 
 @app.route('/api/teacher/toggle_responses', methods=['POST'])

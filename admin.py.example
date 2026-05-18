@@ -6,6 +6,10 @@ ADMIN_PASSWORD = "changeme"  # CHANGE THIS!
 TEACHER_PASSWORD = "teacher"  # CHANGE THIS! Students must not know this.
 SECRET_KEY = "dev-secret-key-change-in-production"  # CHANGE THIS!
 
+# Gemini API Key for AI Explainer feature (optional)
+# Get your key at: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY = ""  # Add your Gemini API key here to enable AI Explainer
+
 # To generate a secure secret key, run:
 # import secrets
 # print(secrets.token_hex(32))

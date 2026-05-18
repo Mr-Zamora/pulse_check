@@ -50,7 +50,9 @@ def init_db():
             quiz_start          REAL,
             quiz_duration       INTEGER DEFAULT 120,
             auto_start          INTEGER DEFAULT 0,
-            show_responses      INTEGER DEFAULT 0
+            show_responses      INTEGER DEFAULT 0,
+            explainer_text      TEXT,
+            explainer_timestamp REAL
         );
 
         CREATE TABLE IF NOT EXISTS student_last_seen (
@@ -86,6 +88,19 @@ def init_db():
     except sqlite3.OperationalError:
         # Column doesn't exist, add it
         conn.execute("ALTER TABLE room_states ADD COLUMN show_responses INTEGER DEFAULT 0")
+        conn.commit()
+    
+    # Migration: Add explainer columns if they don't exist
+    try:
+        conn.execute("SELECT explainer_text FROM room_states LIMIT 1")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE room_states ADD COLUMN explainer_text TEXT")
+        conn.commit()
+    
+    try:
+        conn.execute("SELECT explainer_timestamp FROM room_states LIMIT 1")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE room_states ADD COLUMN explainer_timestamp REAL")
         conn.commit()
     
     conn.commit()

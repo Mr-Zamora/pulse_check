@@ -139,7 +139,27 @@ function renderState(data) {
 // --- Renderers ---
 
 function showWaitingState() {
-    // Check if current question has a video URL
+    // Priority 1: Check if AI explainer is available
+    if (lastStateData?.explainer_text) {
+        viewport.innerHTML = `
+            <h3 style="margin-bottom: 20px; color: #64748B;">State: WAITING</h3>
+            <div class="state-card" style="background: #F0F9FF; border: 2px solid #7C3AED; padding: 24px;">
+                <h3 style="color: #7C3AED; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">🤖</span>
+                    AI Teacher Explainer
+                </h3>
+                <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; line-height: 1.6; color: #1E293B;">
+                    ${lastStateData.explainer_text.replace(/\n/g, '<br>')}
+                </div>
+                <p style="color: #64748B; text-align: center; font-style: italic;">
+                    The question will appear when the teacher starts the quiz.
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Priority 2: Check if current question has a video URL
     const videoUrl = currentQuestionData?.video_url;
     
     if (videoUrl && videoUrl.trim() !== '') {
@@ -169,7 +189,7 @@ function showWaitingState() {
             showEyesOnTeacher();
         }
     } else {
-        // No video URL, show Eyes on Teacher
+        // Priority 3: No explainer or video, show Eyes on Teacher
         showEyesOnTeacher();
     }
 }
