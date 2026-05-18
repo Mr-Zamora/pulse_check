@@ -34,8 +34,11 @@ DB_DIR = os.path.join(BASE_DIR, 'database')
 QUESTIONS_CSV = os.path.join(DB_DIR, 'questions.csv')
 RESPONSES_CSV = os.path.join(DB_DIR, 'responses.csv')
 
-# --- In-memory questions cache (single process optimisation; safe with WAL SQLite) ---
+# --- In-memory caches (single process optimisation; safe with WAL SQLite) ---
 questions_cache = None
+responses_cache = None
+responses_cache_mtime = 0
+cache_lock = threading.Lock()  # Protect cache updates
 
 
 # ===========================================================================
@@ -64,17 +67,35 @@ def read_questions(room_id=None):
 
 
 def read_responses(room_id=None, question_id=None):
+    global responses_cache, responses_cache_mtime
+    
+    with cache_lock:
+        # Check if cache is valid
+        if os.path.exists(RESPONSES_CSV):
+            current_mtime = os.path.getmtime(RESPONSES_CSV)
+            if responses_cache is None or current_mtime > responses_cache_mtime:
+                # Reload cache
+                with csv_lock:
+                    with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
+                        responses_cache = list(csv.DictReader(f))
+                        responses_cache_mtime = current_mtime
+        else:
+            responses_cache = []
+            responses_cache_mtime = 0
+        
+        # Make a copy to avoid external modifications
+        cache_copy = list(responses_cache) if responses_cache else []
+    
+    # Filter from cache copy (outside lock)
+    if room_id is None and question_id is None:
+        return cache_copy
+    
     responses = []
-    if not os.path.exists(RESPONSES_CSV):
-        return responses
-    with csv_lock:
-        with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                match_room = (room_id is None) or (str(row.get('room_id')) == str(room_id))
-                match_q = (question_id is None) or (str(row.get('question_id')) == str(question_id))
-                if match_room and match_q:
-                    responses.append(row)
+    for row in cache_copy:
+        match_room = (room_id is None) or (str(row.get('room_id')) == str(room_id))
+        match_q = (question_id is None) or (str(row.get('question_id')) == str(question_id))
+        if match_room and match_q:
+            responses.append(row)
     return responses
 
 
@@ -92,6 +113,7 @@ def write_question(question_dict):
 
 
 def write_response(response_dict):
+    global responses_cache_mtime, responses_cache
     file_exists = os.path.exists(RESPONSES_CSV)
     fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
     with csv_lock:
@@ -100,6 +122,10 @@ def write_response(response_dict):
             if not file_exists:
                 writer.writeheader()
             writer.writerow({k: response_dict.get(k, '') for k in fieldnames})
+    # Invalidate cache (thread-safe)
+    with cache_lock:
+        responses_cache = None
+        responses_cache_mtime = 0
 
 
 def normalize_answer(text):
@@ -119,14 +145,12 @@ def init_room(room_id):
         INSERT OR IGNORE INTO room_states (room_id) VALUES (?)
     """, (room_id,))
     db.commit()
-    db.close()
 
 
 def get_room_state(room_id):
     """Return room state as a plain dict, or None if room doesn't exist."""
     db = get_db()
     row = db.execute("SELECT * FROM room_states WHERE room_id = ?", (room_id,)).fetchone()
-    db.close()
     if row is None:
         return None
     return dict(row)
@@ -141,7 +165,6 @@ def set_room_state(room_id, **kwargs):
     db = get_db()
     db.execute(f"UPDATE room_states SET {cols} WHERE room_id = ?", vals)
     db.commit()
-    db.close()
 
 
 def touch_student(room_id, student_name):
@@ -154,7 +177,6 @@ def touch_student(room_id, student_name):
     ).fetchone()
     
     if existing and existing['last_seen'] == -1:
-        db.close()
         return False  # Student was kicked
     
     db.execute("""
@@ -163,7 +185,6 @@ def touch_student(room_id, student_name):
         ON CONFLICT(room_id, student_name) DO UPDATE SET last_seen = excluded.last_seen
     """, (room_id, student_name, time.time()))
     db.commit()
-    db.close()
     return True
 
 
@@ -174,7 +195,6 @@ def get_student_states(room_id):
         "SELECT student_name, last_seen FROM student_last_seen WHERE room_id = ? AND last_seen != -1",
         (room_id,)
     ).fetchall()
-    db.close()
 
     now = time.time()
     states = {}
@@ -211,7 +231,6 @@ def join():
         WHERE room_id = ? AND student_name = ? AND last_seen = -1
     """, (time.time(), room_id, student_name))
     db.commit()
-    db.close()
     
     return redirect(url_for('room', room_id=room_id))
 
@@ -242,7 +261,11 @@ def room_status():
     if not room_id:
         return jsonify({"status": "error", "message": "Missing room_id"}), 400
 
-    init_room(room_id)
+    # Only init room if it doesn't exist (reduces writes)
+    state = get_room_state(room_id)
+    if state is None:
+        init_room(room_id)
+        state = get_room_state(room_id)
 
     # Update student presence (prefer explicit query param over shared session cookie)
     student_name = None
@@ -261,8 +284,6 @@ def room_status():
                 "error_type": "student_removed",
                 "message": "You have been removed from this room by the teacher."
             }), 403
-
-    state = get_room_state(room_id)
 
     # Calculate time remaining
     now = time.time()
@@ -299,7 +320,7 @@ def room_status():
                 question_data['is_multi_select'] = is_multi_select
                 break
 
-    # Check if student has already submitted for this question
+    # Check if student has already submitted for this question (only for students)
     has_submitted = False
     if student_name and state['current_q']:
         responses = read_responses(room_id, state['current_q'])
@@ -382,7 +403,6 @@ def delete_student():
                    (room_id, student_name))
         rows_affected = cursor.rowcount
         db.commit()
-        db.close()
         
         print(f"Rows affected: {rows_affected}")
         
@@ -414,29 +434,38 @@ def delete_response():
                 deleted_count += 1
             updated_responses.append(r)
         
-        # Rewrite the entire responses CSV
+        # Rewrite the entire responses CSV (with proper locking)
         if deleted_count > 0:
-            all_responses = read_responses()  # Get all responses
-            # Replace the ones we updated
-            final_responses = []
-            for r in all_responses:
-                if r.get('room_id') == room_id and r.get('question_id') == question_id:
-                    # Use updated version
-                    matching = next((ur for ur in updated_responses if ur['student_name'] == r['student_name']), None)
-                    if matching:
-                        final_responses.append(matching)
+            with csv_lock:
+                all_responses = []
+                with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
+                    all_responses = list(csv.DictReader(f))
+                
+                # Replace the ones we updated
+                final_responses = []
+                for r in all_responses:
+                    if r.get('room_id') == room_id and r.get('question_id') == question_id:
+                        # Use updated version
+                        matching = next((ur for ur in updated_responses if ur['student_name'] == r['student_name']), None)
+                        if matching:
+                            final_responses.append(matching)
+                        else:
+                            final_responses.append(r)
                     else:
                         final_responses.append(r)
-                else:
-                    final_responses.append(r)
-            
-            # Write back to CSV
-            fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
-            with csv_lock:
+                
+                # Write back to CSV
+                fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
                 with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(final_responses)
+            
+            # Invalidate cache after deletion (thread-safe)
+            with cache_lock:
+                global responses_cache, responses_cache_mtime
+                responses_cache = None
+                responses_cache_mtime = 0
         
         return jsonify({"status": "success", "deleted_count": deleted_count})
     except Exception as e:
@@ -549,6 +578,12 @@ def submit():
                         writer = csv.DictWriter(f, fieldnames=fieldnames)
                         writer.writeheader()
                         writer.writerows(responses)
+                
+                # Invalidate cache after deletion (thread-safe)
+                with cache_lock:
+                    global responses_cache, responses_cache_mtime
+                    responses_cache = None
+                    responses_cache_mtime = 0
         else:
             is_correct = str(ans).strip() == str(target_q['correct_answer']).strip()
 
@@ -692,8 +727,6 @@ def admin_stats():
             "SELECT COUNT(*) as cnt FROM student_last_seen WHERE last_seen != -1"
         ).fetchone()['cnt']
         
-        db.close()
-        
         # Count questions
         questions = get_all_questions()
         question_count = len(questions)
@@ -763,7 +796,6 @@ def admin_get_rooms():
                 'student_count': student_count
             })
         
-        db.close()
         return jsonify({"status": "success", "rooms": room_list})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -783,7 +815,6 @@ def admin_delete_room():
         db.execute("DELETE FROM room_states WHERE room_id = ?", (room_id,))
         db.execute("DELETE FROM student_last_seen WHERE room_id = ?", (room_id,))
         db.commit()
-        db.close()
         return jsonify({"status": "success", "message": f"Room {room_id} deleted"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -797,7 +828,6 @@ def admin_delete_all_rooms():
         db.execute("DELETE FROM room_states")
         db.execute("DELETE FROM student_last_seen")
         db.commit()
-        db.close()
         return jsonify({"status": "success", "message": "All rooms deleted"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -824,7 +854,6 @@ def admin_clear_disconnected():
         cursor = db.execute("DELETE FROM student_last_seen WHERE last_seen = -1")
         count = cursor.rowcount
         db.commit()
-        db.close()
         return jsonify({"status": "success", "message": f"Removed {count} disconnected students"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

@@ -138,14 +138,50 @@ Access the admin dashboard at `http://localhost:5000/admin/login`
 
 ---
 
-## Deployment (PythonAnywhere)
+## Performance
+
+**Optimized for 20-30+ concurrent students** with:
+- Thread-local database connection pooling
+- In-memory response caching with modification tracking
+- Database indexes on frequently queried columns
+- 2-second polling interval (reduced server load by 50%)
+- WAL mode SQLite for better concurrent access
+- **Thread-safe operations** - No race conditions under concurrent load
+
+See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for detailed metrics and [`docs/RACE_CONDITIONS.md`](docs/RACE_CONDITIONS.md) for concurrency analysis.
+
+---
+
+## Deployment
+
+### Production (Recommended)
+
+For live classroom use with 10+ students:
+
+**Windows:**
+```bash
+run_production.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x run_production.sh
+./run_production.sh
+```
+
+This runs the app with:
+- **Waitress** (Windows) or **Gunicorn** (Linux/Mac) production server
+- Multiple worker processes for concurrent handling
+- Proper logging and timeout configuration
+
+### PythonAnywhere (Free Tier)
 
 1. Upload the project folder to your PythonAnywhere files
 2. In the **Web** tab, set the WSGI file to point to `app.py`
-3. Change the `secret_key` in `app.py` to a long random string before deploying
+3. Set up `admin.py` with secure credentials
 4. Reload the web app
 
-> The default PythonAnywhere free tier uses a single WSGI worker, which is fully compatible. The SQLite state layer is safe for multi-worker configurations.
+> The default PythonAnywhere free tier uses a single WSGI worker. For better performance with larger classes, consider a paid tier with multiple workers.
 
 ---
 

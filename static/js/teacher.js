@@ -1,4 +1,4 @@
-const POLL_INTERVAL = 1000;
+const POLL_INTERVAL = 2000;
 let currentQuestions = [];
 let currentRoomState = null;
 let currentQuestionId = null;

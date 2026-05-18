@@ -1,6 +1,7 @@
 import sqlite3
 import threading
 import os
+from functools import lru_cache
 
 # --- CSV lock (still needed for questions.csv and responses.csv writes) ---
 csv_lock = threading.Lock()
@@ -12,14 +13,28 @@ DB_PATH = os.path.join(BASE_DIR, 'database', 'classroom_pulse.db')
 DISCONNECT_TIMEOUT = 30   # seconds before a student is marked disconnected
 DEFAULT_QUESTION_TIME = 120  # seconds
 
+# Thread-local storage for database connections
+_thread_local = threading.local()
+
 
 def get_db():
-    """Open a thread-local SQLite connection with WAL mode enabled."""
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+    """Get or create a thread-local SQLite connection with WAL mode enabled."""
+    if not hasattr(_thread_local, 'connection') or _thread_local.connection is None:
+        conn = sqlite3.connect(
+            DB_PATH, 
+            check_same_thread=False, 
+            timeout=30.0,  # Increased timeout for concurrent writes
+            isolation_level='DEFERRED'  # Better for read-heavy workloads
+        )
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA synchronous=NORMAL")  # Better performance with WAL
+        conn.execute("PRAGMA cache_size=-64000")  # 64MB cache
+        conn.execute("PRAGMA busy_timeout=30000")  # 30 second busy timeout
+        conn.execute("PRAGMA wal_autocheckpoint=1000")  # Checkpoint every 1000 pages
+        _thread_local.connection = conn
+    return _thread_local.connection
 
 
 def init_db():
@@ -45,6 +60,12 @@ def init_db():
             last_seen       REAL NOT NULL,
             PRIMARY KEY (room_id, student_name)
         );
+        
+        CREATE INDEX IF NOT EXISTS idx_student_room_lastseen 
+            ON student_last_seen(room_id, last_seen);
+        
+        CREATE INDEX IF NOT EXISTS idx_room_state 
+            ON room_states(state);
     """)
     
     # Migration: Add show_responses column if it doesn't exist
