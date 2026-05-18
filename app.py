@@ -138,10 +138,18 @@ def get_room_state(room_id):
     return dict(row)
 
 
+_ROOM_STATE_COLUMNS = frozenset({
+    'state', 'current_q', 'instruction_start', 'instruction_duration',
+    'quiz_start', 'quiz_duration', 'auto_start', 'show_responses'
+})
+
 def set_room_state(room_id, **kwargs):
     """Upsert fields on a room_states row."""
     if not kwargs:
         return
+    invalid = set(kwargs) - _ROOM_STATE_COLUMNS
+    if invalid:
+        raise ValueError(f"set_room_state() got unknown column(s): {invalid}")
     cols = ', '.join(f"{k} = ?" for k in kwargs)
     vals = list(kwargs.values()) + [room_id]
     db = get_db()
