@@ -7,7 +7,11 @@ csv_lock = threading.Lock()
 
 # --- SQLite setup ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, 'database', 'classroom_pulse.db')
+# Use /tmp on PythonAnywhere to avoid NFS I/O errors
+if os.path.exists('/home/pulsecheck'):
+    DB_PATH = '/tmp/classroom_pulse.db'
+else:
+    DB_PATH = os.path.join(BASE_DIR, 'database', 'classroom_pulse.db')
 
 DISCONNECT_TIMEOUT = 30   # seconds before a student is marked disconnected
 DEFAULT_QUESTION_TIME = 120  # seconds
