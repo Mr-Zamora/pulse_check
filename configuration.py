@@ -1,9 +1,8 @@
 import sqlite3
 import threading
 import os
-from functools import lru_cache
 
-# --- CSV lock (still needed for questions.csv and responses.csv writes) ---
+# --- CSV lock (questions.csv only; responses now live in SQLite) ---
 csv_lock = threading.Lock()
 
 # --- SQLite setup ---
@@ -66,6 +65,19 @@ def init_db():
         
         CREATE INDEX IF NOT EXISTS idx_room_state 
             ON room_states(state);
+
+        CREATE TABLE IF NOT EXISTS responses (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp     TEXT NOT NULL,
+            room_id       TEXT NOT NULL,
+            student_name  TEXT NOT NULL,
+            question_id   TEXT NOT NULL,
+            answer        TEXT,
+            is_correct    TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_responses_room_question
+            ON responses(room_id, question_id);
     """)
     
     # Migration: Add show_responses column if it doesn't exist
@@ -77,4 +89,24 @@ def init_db():
         conn.commit()
     
     conn.commit()
+
+    # One-time migration: import existing responses.csv into SQLite (safe to run repeatedly)
+    import csv as _csv
+    csv_path = os.path.join(os.path.dirname(DB_PATH), 'responses.csv')
+    if os.path.exists(csv_path):
+        existing = conn.execute("SELECT COUNT(*) FROM responses").fetchone()[0]
+        if existing == 0:
+            with open(csv_path, 'r', encoding='utf-8') as _f:
+                for row in _csv.DictReader(_f):
+                    conn.execute(
+                        "INSERT INTO responses "
+                        "(timestamp, room_id, student_name, question_id, answer, is_correct) "
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        (row.get('timestamp', ''), row.get('room_id', ''),
+                         row.get('student_name', ''), row.get('question_id', ''),
+                         row.get('answer', ''), row.get('is_correct', ''))
+                    )
+            conn.commit()
+
+    _thread_local.connection = None  # prevent get_db() returning a closed connection
     conn.close()

@@ -3,7 +3,6 @@ import os
 import time
 import uuid
 import zipfile
-import threading
 from io import BytesIO
 from functools import wraps
 from datetime import datetime
@@ -33,31 +32,28 @@ except Exception as e:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = os.path.join(BASE_DIR, 'database')
 QUESTIONS_CSV = os.path.join(DB_DIR, 'questions.csv')
-RESPONSES_CSV = os.path.join(DB_DIR, 'responses.csv')
-
-# --- In-memory caches (single process optimisation; safe with WAL SQLite) ---
+# --- In-memory cache for questions.csv (questions rarely change) ---
 questions_cache = None
-responses_cache = None
-responses_cache_mtime = 0
-cache_lock = threading.Lock()  # Protect cache updates
 
 
 # ===========================================================================
-# CSV Helpers (questions.csv + responses.csv unchanged)
+# CSV Helpers (questions.csv only — responses now in SQLite)
 # ===========================================================================
 
 def get_all_questions():
     global questions_cache
     if questions_cache is not None:
-        return questions_cache
-    questions = []
+        return list(questions_cache)
+
     if not os.path.exists(QUESTIONS_CSV):
-        return questions
+        return []
+
     with csv_lock:
         with open(QUESTIONS_CSV, 'r', encoding='utf-8') as f:
-            questions = list(csv.DictReader(f))
-    questions_cache = questions
-    return questions
+            loaded = list(csv.DictReader(f))
+        if questions_cache is None:  # second check: another thread may have filled it
+            questions_cache = loaded
+        return list(questions_cache)
 
 
 def read_questions(room_id=None):
@@ -68,65 +64,50 @@ def read_questions(room_id=None):
 
 
 def read_responses(room_id=None, question_id=None):
-    global responses_cache, responses_cache_mtime
-    
-    with cache_lock:
-        # Check if cache is valid
-        if os.path.exists(RESPONSES_CSV):
-            current_mtime = os.path.getmtime(RESPONSES_CSV)
-            if responses_cache is None or current_mtime > responses_cache_mtime:
-                # Reload cache
-                with csv_lock:
-                    with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
-                        responses_cache = list(csv.DictReader(f))
-                        responses_cache_mtime = current_mtime
-        else:
-            responses_cache = []
-            responses_cache_mtime = 0
-        
-        # Make a copy to avoid external modifications
-        cache_copy = list(responses_cache) if responses_cache else []
-    
-    # Filter from cache copy (outside lock)
-    if room_id is None and question_id is None:
-        return cache_copy
-    
-    responses = []
-    for row in cache_copy:
-        match_room = (room_id is None) or (str(row.get('room_id')) == str(room_id))
-        match_q = (question_id is None) or (str(row.get('question_id')) == str(question_id))
-        if match_room and match_q:
-            responses.append(row)
-    return responses
+    db = get_db()
+    if room_id and question_id:
+        rows = db.execute(
+            "SELECT * FROM responses WHERE room_id = ? AND question_id = ?",
+            (room_id, question_id)
+        ).fetchall()
+    elif room_id:
+        rows = db.execute(
+            "SELECT * FROM responses WHERE room_id = ?", (room_id,)
+        ).fetchall()
+    else:
+        rows = db.execute("SELECT * FROM responses").fetchall()
+    return [dict(r) for r in rows]
 
 
 def write_question(question_dict):
     global questions_cache
-    file_exists = os.path.exists(QUESTIONS_CSV)
     fieldnames = ['question_id', 'room_id', 'type', 'prompt', 'options', 'correct_answer']
     with csv_lock:
+        file_exists = os.path.exists(QUESTIONS_CSV)  # checked inside lock to avoid TOCTOU
         with open(QUESTIONS_CSV, 'a', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             if not file_exists:
                 writer.writeheader()
             writer.writerow({k: question_dict.get(k, '') for k in fieldnames})
-    questions_cache = None  # invalidate cache
+        questions_cache = None  # invalidate cache
 
 
 def write_response(response_dict):
-    global responses_cache_mtime, responses_cache
-    file_exists = os.path.exists(RESPONSES_CSV)
-    fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
-    with csv_lock:
-        with open(RESPONSES_CSV, 'a', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow({k: response_dict.get(k, '') for k in fieldnames})
-    # Invalidate cache (thread-safe)
-    with cache_lock:
-        responses_cache = None
-        responses_cache_mtime = 0
+    db = get_db()
+    db.execute(
+        "INSERT INTO responses "
+        "(timestamp, room_id, student_name, question_id, answer, is_correct) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            response_dict.get('timestamp', ''),
+            response_dict['room_id'],
+            response_dict['student_name'],
+            response_dict['question_id'],
+            response_dict.get('answer', ''),
+            response_dict.get('is_correct', '')
+        )
+    )
+    db.commit()
 
 
 def normalize_answer(text):
@@ -296,9 +277,17 @@ def room_status():
         time_remaining = max(0, state['instruction_duration'] - elapsed)
         timer_type = 'instruction'
 
-        # Auto-transition to ACTIVE when instruction timer expires
+        # Auto-transition to ACTIVE when instruction timer expires.
+        # Use a conditional UPDATE so only one concurrent request wins;
+        # subsequent polls land on the ACTIVE branch without a redundant write.
         if time_remaining == 0 and state['auto_start']:
-            set_room_state(room_id, state='ACTIVE', quiz_start=now)
+            db = get_db()
+            db.execute(
+                "UPDATE room_states SET state='ACTIVE', quiz_start=?"
+                " WHERE room_id=? AND state='WAITING'",
+                (now, room_id)
+            )
+            db.commit()
             state = get_room_state(room_id)
             time_remaining = state['quiz_duration']
             timer_type = 'quiz'
@@ -420,55 +409,19 @@ def delete_response():
         room_id = data.get('room_id')
         question_id = data.get('question_id')
         normalized_answer = data.get('normalized_answer')
-        
+
         if not room_id or not question_id or normalized_answer is None:
             return jsonify({"status": "error", "message": "Missing required fields"}), 400
-        
-        # Mark all matching responses as deleted by updating the CSV
-        responses = read_responses(room_id, question_id)
-        updated_responses = []
-        deleted_count = 0
-        
-        for r in responses:
-            if normalize_answer(r['answer']) == normalized_answer:
-                r['is_correct'] = 'DELETED'  # Use is_correct field to mark as deleted
-                deleted_count += 1
-            updated_responses.append(r)
-        
-        # Rewrite the entire responses CSV (with proper locking)
-        if deleted_count > 0:
-            with csv_lock:
-                all_responses = []
-                with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
-                    all_responses = list(csv.DictReader(f))
-                
-                # Replace the ones we updated
-                final_responses = []
-                for r in all_responses:
-                    if r.get('room_id') == room_id and r.get('question_id') == question_id:
-                        # Use updated version
-                        matching = next((ur for ur in updated_responses if ur['student_name'] == r['student_name']), None)
-                        if matching:
-                            final_responses.append(matching)
-                        else:
-                            final_responses.append(r)
-                    else:
-                        final_responses.append(r)
-                
-                # Write back to CSV
-                fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
-                with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.DictWriter(f, fieldnames=fieldnames)
-                    writer.writeheader()
-                    writer.writerows(final_responses)
-            
-            # Invalidate cache after deletion (thread-safe)
-            with cache_lock:
-                global responses_cache, responses_cache_mtime
-                responses_cache = None
-                responses_cache_mtime = 0
-        
-        return jsonify({"status": "success", "deleted_count": deleted_count})
+
+        db = get_db()
+        cursor = db.execute(
+            "UPDATE responses SET is_correct = 'DELETED' "
+            "WHERE room_id = ? AND question_id = ? AND LOWER(TRIM(answer)) = ?",
+            (room_id, question_id, normalized_answer)
+        )
+        db.commit()
+
+        return jsonify({"status": "success", "deleted_count": cursor.rowcount})
     except Exception as e:
         print(f"Error deleting response: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -560,31 +513,13 @@ def submit():
     if target_q:
         if target_q['type'] == 'SHORT':
             is_correct = normalize_answer(ans) == normalize_answer(target_q['correct_answer'])
-            
-            # For SHORT questions, delete old answer to allow resubmission
-            if os.path.exists(RESPONSES_CSV):
-                with csv_lock:
-                    responses = []
-                    with open(RESPONSES_CSV, 'r', encoding='utf-8') as f:
-                        reader = csv.DictReader(f)
-                        responses = [r for r in reader if not (
-                            r['room_id'] == room_id and 
-                            r['student_name'] == student_name and 
-                            r['question_id'] == q_id
-                        )]
-                    
-                    # Rewrite file without the old answer
-                    with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
-                        fieldnames = ['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct']
-                        writer = csv.DictWriter(f, fieldnames=fieldnames)
-                        writer.writeheader()
-                        writer.writerows(responses)
-                
-                # Invalidate cache after deletion (thread-safe)
-                with cache_lock:
-                    global responses_cache, responses_cache_mtime
-                    responses_cache = None
-                    responses_cache_mtime = 0
+            # SHORT answers can be resubmitted: atomically delete the prior answer.
+            db = get_db()
+            db.execute(
+                "DELETE FROM responses WHERE room_id = ? AND student_name = ? AND question_id = ?",
+                (room_id, student_name, q_id)
+            )
+            db.commit()
         else:
             is_correct = str(ans).strip() == str(target_q['correct_answer']).strip()
 
@@ -733,8 +668,9 @@ def admin_stats():
         question_count = len(questions)
         
         # Count responses
-        responses = read_responses()
-        response_count = len([r for r in responses if r.get('is_correct') != 'DELETED'])
+        response_count = db.execute(
+            "SELECT COUNT(*) FROM responses WHERE is_correct != 'DELETED'"
+        ).fetchone()[0]
         
         return jsonify({
             "status": "success",
@@ -754,49 +690,38 @@ def admin_stats():
 def admin_get_rooms():
     try:
         db = get_db()
+        # Single query: all room columns + student count via LEFT JOIN
         rooms = db.execute("""
-            SELECT room_id, state, current_q, show_responses
-            FROM room_states
+            SELECT rs.room_id, rs.state, rs.current_q, rs.show_responses,
+                   rs.instruction_start, rs.instruction_duration,
+                   rs.quiz_start, rs.quiz_duration,
+                   COUNT(sl.student_name) AS student_count
+            FROM room_states rs
+            LEFT JOIN student_last_seen sl
+                ON sl.room_id = rs.room_id AND sl.last_seen != -1
+            GROUP BY rs.room_id
         """).fetchall()
-        
+
+        now = time.time()
         room_list = []
         for r in rooms:
-            student_count = db.execute(
-                "SELECT COUNT(*) as cnt FROM student_last_seen WHERE room_id = ? AND last_seen != -1",
-                (r['room_id'],)
-            ).fetchone()['cnt']
-            
-            # Calculate time remaining
-            now = time.time()
             time_remaining = 0
-            if r['state'] == 'WAITING':
-                # Check instruction time
-                instruction_start = db.execute(
-                    "SELECT instruction_start, instruction_duration FROM room_states WHERE room_id = ?",
-                    (r['room_id'],)
-                ).fetchone()
-                if instruction_start['instruction_start']:
-                    elapsed = now - instruction_start['instruction_start']
-                    time_remaining = max(0, instruction_start['instruction_duration'] - int(elapsed))
-            elif r['state'] == 'ACTIVE':
-                # Check quiz time
-                quiz_start = db.execute(
-                    "SELECT quiz_start, quiz_duration FROM room_states WHERE room_id = ?",
-                    (r['room_id'],)
-                ).fetchone()
-                if quiz_start['quiz_start']:
-                    elapsed = now - quiz_start['quiz_start']
-                    time_remaining = max(0, quiz_start['quiz_duration'] - int(elapsed))
-            
+            if r['state'] == 'WAITING' and r['instruction_start']:
+                elapsed = now - r['instruction_start']
+                time_remaining = max(0, r['instruction_duration'] - int(elapsed))
+            elif r['state'] == 'ACTIVE' and r['quiz_start']:
+                elapsed = now - r['quiz_start']
+                time_remaining = max(0, r['quiz_duration'] - int(elapsed))
+
             room_list.append({
                 'room_id': r['room_id'],
                 'state': r['state'],
                 'question_id': r['current_q'],
                 'time_remaining': time_remaining,
                 'show_responses': r['show_responses'],
-                'student_count': student_count
+                'student_count': r['student_count']
             })
-        
+
         return jsonify({"status": "success", "rooms": room_list})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -838,10 +763,9 @@ def admin_delete_all_rooms():
 @admin_required
 def admin_delete_all_responses():
     try:
-        with csv_lock:
-            with open(RESPONSES_CSV, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=['timestamp', 'room_id', 'student_name', 'question_id', 'answer', 'is_correct'])
-                writer.writeheader()
+        db = get_db()
+        db.execute("DELETE FROM responses")
+        db.commit()
         return jsonify({"status": "success", "message": "All responses deleted"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -868,8 +792,7 @@ def admin_backup():
         
         memory_file = BytesIO()
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-            zf.write(DB_PATH, 'classroom_pulse.db')
-            zf.write(RESPONSES_CSV, 'responses.csv')
+            zf.write(DB_PATH, 'classroom_pulse.db')  # contains all responses
             zf.write(QUESTIONS_CSV, 'questions.csv')
         
         memory_file.seek(0)
