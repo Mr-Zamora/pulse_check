@@ -565,7 +565,7 @@ def generate_explainer():
 
 def generate_ai_explainer(question):
     """Call Gemini API to generate pedagogical explanation"""
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3.1-flash-lite')
     
     prompt = f"""### ROLE ###
 You are a high school teacher preparing students for a quiz question.
