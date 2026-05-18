@@ -95,7 +95,7 @@ def write_question(question_dict):
 def write_response(response_dict):
     db = get_db()
     db.execute(
-        "INSERT INTO responses "
+        "INSERT OR IGNORE INTO responses "
         "(timestamp, room_id, student_name, question_id, answer, is_correct) "
         "VALUES (?, ?, ?, ?, ?, ?)",
         (

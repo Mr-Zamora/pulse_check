@@ -90,6 +90,25 @@ def init_db():
     
     conn.commit()
 
+    # Deduplicate before creating UNIQUE index: keep only the latest row per
+    # (room_id, student_name, question_id) so the index creation never fails.
+    conn.execute("""
+        DELETE FROM responses
+        WHERE id NOT IN (
+            SELECT MAX(id)
+            FROM responses
+            GROUP BY room_id, student_name, question_id
+        )
+    """)
+    conn.commit()
+
+    # UNIQUE index created after dedup so it never hits existing duplicate rows.
+    conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_responses_unique_submission
+            ON responses(room_id, student_name, question_id)
+    """)
+    conn.commit()
+
     # One-time migration: import existing responses.csv into SQLite (safe to run repeatedly)
     import csv as _csv
     csv_path = os.path.join(os.path.dirname(DB_PATH), 'responses.csv')
