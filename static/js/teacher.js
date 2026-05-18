@@ -43,6 +43,68 @@ function showToast(message, type="info") {
     }, 3000);
 }
 
+// --- YouTube Duration Detection ---
+let ytApiReady = false;
+let ytApiQueue = [];
+
+window.onYouTubeIframeAPIReady = function() {
+    ytApiReady = true;
+    ytApiQueue.forEach(fn => fn());
+    ytApiQueue = [];
+};
+
+function extractYouTubeId(url) {
+    if (!url) return null;
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+}
+
+function updateVideoInfo() {
+    const infoDiv = document.getElementById('video-info');
+    const q = currentQuestions.find(x => x.question_id === qSelect.value);
+    const videoUrl = q && q.video_url ? q.video_url.trim() : '';
+    const videoId = extractYouTubeId(videoUrl);
+
+    if (!videoId) {
+        infoDiv.style.display = 'none';
+        infoDiv.textContent = '';
+        return;
+    }
+
+    infoDiv.style.display = 'block';
+    infoDiv.textContent = '🎥 Video detected — fetching duration...';
+
+    const run = () => {
+        const tempDiv = document.createElement('div');
+        tempDiv.id = 'yt-temp-' + Date.now();
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+        new YT.Player(tempDiv.id, {
+            videoId: videoId,
+            playerVars: { autoplay: 0 },
+            events: {
+                onReady: function(e) {
+                    const secs = Math.round(e.target.getDuration());
+                    const m = Math.floor(secs / 60);
+                    const s = secs % 60;
+                    infoDiv.textContent =
+                        `🎥 Video: ${m}:${s.toString().padStart(2,'0')} — set Instruction Time ≥ this, or disable Auto-Start`;
+                    e.target.destroy();
+                    tempDiv.remove();
+                },
+                onError: function() {
+                    infoDiv.textContent = '🎥 Video detected (duration unavailable)';
+                    tempDiv.remove();
+                }
+            }
+        });
+    };
+
+    if (ytApiReady) run();
+    else ytApiQueue.push(run);
+}
+
+
 // --- Initialization ---
 function init() {
     loadQuestions();
@@ -63,6 +125,7 @@ function loadQuestions(selectId = null) {
                 if (selectId) {
                     qSelect.value = selectId;
                 }
+                updateVideoInfo(); // Show video info for initially selected question
             }
         });
 }
