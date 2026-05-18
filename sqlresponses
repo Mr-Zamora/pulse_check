@@ -1,0 +1,50 @@
+#!/bin/bash
+# sqlresponses - Show latest responses from SQLite
+# Usage: sqlresponses [limit] [room_id]
+#   sqlresponses          → last 20 responses
+#   sqlresponses 50       → last 50 responses
+#   sqlresponses 20 2025  → last 20 from room 2025
+
+LIMIT=${1:-20}
+ROOM=${2:-}
+
+cd /home/pulsecheck/pulse_check
+
+if [ -z "$ROOM" ]; then
+    python3 -c "
+from configuration import get_db, init_db
+init_db()
+db = get_db()
+rows = db.execute(
+    'SELECT id, timestamp, room_id, student_name, question_id, answer, is_correct '
+    'FROM responses ORDER BY id DESC LIMIT ?',
+    ($LIMIT,)
+).fetchall()
+print(f'--- Last $LIMIT responses ---')
+for r in rows:
+    status = r['is_correct']
+    flag = '✓' if status == 'True' else ('DEL' if status == 'DELETED' else '✗')
+    ans = r['answer'][:60] + '...' if len(r['answer']) > 60 else r['answer']
+    print(f\"[{flag}] #{r['id']} {r['timestamp'][:19]} | room={r['room_id']} | {r['student_name']} | q={r['question_id']} | {ans}\")
+print(f'--- Total in DB: ' + str(db.execute('SELECT COUNT(*) FROM responses').fetchone()[0]) + ' ---')
+"
+else
+    python3 -c "
+from configuration import get_db, init_db
+init_db()
+db = get_db()
+rows = db.execute(
+    'SELECT id, timestamp, room_id, student_name, question_id, answer, is_correct '
+    'FROM responses WHERE room_id=? ORDER BY id DESC LIMIT ?',
+    ('$ROOM', $LIMIT)
+).fetchall()
+print(f'--- Last $LIMIT responses for room $ROOM ---')
+for r in rows:
+    status = r['is_correct']
+    flag = '✓' if status == 'True' else ('DEL' if status == 'DELETED' else '✗')
+    ans = r['answer'][:60] + '...' if len(r['answer']) > 60 else r['answer']
+    print(f\"[{flag}] #{r['id']} {r['timestamp'][:19]} | {r['student_name']} | q={r['question_id']} | {ans}\")
+room_total = db.execute('SELECT COUNT(*) FROM responses WHERE room_id=?', ('$ROOM',)).fetchone()[0]
+print(f'--- Room $ROOM total: ' + str(room_total) + ' ---')
+"
+fi
