@@ -444,7 +444,8 @@ def teacher_control():
             quiz_duration=int(data.get('quiz_time', 120)),
             quiz_start=None,
             auto_start=1 if data.get('auto_start') else 0,
-            show_responses=0  # Auto-disable show_responses for new question
+            show_responses=0,  # Auto-disable show_responses for new question
+            explainer_text=None  # Clear previous explainer
         )
     elif action == 'start':
         set_room_state(room_id, state='ACTIVE', quiz_start=now, explainer_text=None)
