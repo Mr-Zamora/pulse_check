@@ -7,6 +7,7 @@ let timeRemaining = 0;
 let showResponses = false;
 let responseData = null;
 let lastStateData = null;
+let lastExplainerText = null;
 
 const viewport = document.getElementById('view-port');
 const connDot = document.getElementById('conn-dot');
@@ -86,6 +87,10 @@ function handleStateUpdate(data) {
     const showResponsesChanged = data.show_responses !== showResponses;
     showResponses = data.show_responses;
     
+    // Track explainer changes
+    const explainerChanged = data.explainer_text !== lastExplainerText;
+    lastExplainerText = data.explainer_text;
+    
     // Fetch response data if show_responses is enabled
     if (showResponses && currentQuestionId) {
         fetchResponseData();
@@ -99,12 +104,12 @@ function handleStateUpdate(data) {
         currentQuestionData = data.question_data;
     }
 
-    // Re-render if: state changed, question changed, show_responses changed,
+    // Re-render if: state changed, question changed, show_responses changed, explainer changed,
     // OR we are ACTIVE but were stuck on "Loading Question..." (question data just arrived)
     const questionJustArrived = currentState === "ACTIVE" && !hasQuestionData && data.question_data !== null;
     const transitioningToLocked = currentState === "ACTIVE" && data.room_state === "LOCKED" && !hasSubmitted;
 
-    if (data.room_state !== currentState || questionChanged || questionJustArrived || showResponsesChanged) {
+    if (data.room_state !== currentState || questionChanged || questionJustArrived || showResponsesChanged || explainerChanged) {
         if (transitioningToLocked) {
             // Try to auto-submit before rendering the locked screen
             attemptAutoSubmit(data);
