@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 import time
 import uuid
 import zipfile
@@ -208,12 +209,19 @@ def index():
     return render_template('index.html')
 
 
+_VALID_ROOM_ID = re.compile(r'^[a-zA-Z0-9_-]{1,50}$')
+_VALID_NAME    = re.compile(r'^[a-zA-Z0-9 _\'\-\.]{1,50}$')
+
 @app.route('/join', methods=['POST'])
 def join():
-    student_name = request.form.get('student_name')
-    room_id = request.form.get('room_id')
+    student_name = request.form.get('student_name', '').strip()
+    room_id = request.form.get('room_id', '').strip()
     if not student_name or not room_id:
         return redirect(url_for('index'))
+    if not _VALID_ROOM_ID.match(room_id):
+        return render_template('index.html', error="Invalid room ID. Use only letters, numbers, hyphens and underscores.")
+    if not _VALID_NAME.match(student_name):
+        return render_template('index.html', error="Invalid name. Use only letters, numbers, spaces and basic punctuation.")
     session['student_name'] = student_name
     session['room_id'] = room_id
     init_room(room_id)

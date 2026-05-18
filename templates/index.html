@@ -4,6 +4,10 @@
 <div class="landing-container">
     <img src="{{ url_for('static', filename='header.png') }}" alt="Pulse Check" style="width: calc(100% + 80px); display: block; margin: -40px -40px 20px -40px; padding: 0; border-radius: 12px 12px 0 0;">
 
+    {% if error %}
+    <div style="background:#FEE2E2; color:#DC2626; padding:10px 16px; border-radius:6px; margin-bottom:16px; font-size:14px;">{{ error }}</div>
+    {% endif %}
+
     <form action="/join" method="POST">
         <div class="form-group">
             <label for="student-name">Your Name</label>
