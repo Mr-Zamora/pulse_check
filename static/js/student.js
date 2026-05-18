@@ -382,9 +382,10 @@ function renderResponseDistribution() {
             let borderColor = isCorrect ? '#10B981' : '#EF4444';
             let icon = isCorrect ? '✓' : '✗';
             
+            const safeRaw = String(info.raw).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             html += `
                 <div style="margin-bottom: 10px; padding: 10px; background: white; border-left: 4px solid ${borderColor}; border-radius: 4px;">
-                    <code style="font-size: 14px; white-space: pre-wrap;">${info.raw}</code> 
+                    <code style="font-size: 14px; white-space: pre-wrap;">${safeRaw}</code> 
                     <span style="color: #64748B; margin-left: 8px;">${icon} [${info.count} student${info.count > 1 ? 's' : ''}]</span>
                 </div>
             `;

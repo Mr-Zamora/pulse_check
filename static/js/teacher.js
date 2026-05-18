@@ -18,6 +18,13 @@ const ribbonTimer = document.getElementById('ribbon-timer');
 const ribbonSub = document.getElementById('ribbon-submitted');
 const ribbonTot = document.getElementById('ribbon-total');
 
+// --- Utility: HTML Escaping (prevent XSS from student-supplied text) ---
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(text)));
+    return div.innerHTML;
+}
+
 // --- Utility: Toast Notifications ---
 function showToast(message, type="info") {
     const container = document.getElementById('toast-container');
@@ -396,13 +403,16 @@ function renderRoster(states) {
         // Show student's answer if available
         let answerDisplay = '';
         if (info.answer) {
-            answerDisplay = `<div class="answer" style="font-size: 12px; color: #64748B; margin-top: 4px; white-space: pre-wrap;">${info.answer}</div>`;
+            answerDisplay = `<div class="answer" style="font-size: 12px; color: #64748B; margin-top: 4px; white-space: pre-wrap;">${escapeHtml(info.answer)}</div>`;
         }
-        
+
+        const safeName = escapeHtml(name);
+        const safeDisplayName = isAnonymized ? `Student ${count}` : safeName;
+
         html += `
             <div class="student-card ${stateClass}" style="position: relative;">
-                <button class="delete-student-btn" onclick="deleteStudent('${name}')" title="Remove student">×</button>
-                <div class="name" ${nameStyle}>${displayName}</div>
+                <button class="delete-student-btn" onclick="deleteStudent('${safeName}')" title="Remove student">×</button>
+                <div class="name" ${nameStyle}>${safeDisplayName}</div>
                 <div class="status">${iconText}</div>
                 ${answerDisplay}
             </div>
@@ -501,7 +511,7 @@ function renderDistribution(data) {
             html += `
                 <div class="short-answer-group" style="${borderStyle}; position: relative;">
                     <button class="delete-response-btn" data-norm="${norm}" data-type="SHORT" title="Delete this response">×</button>
-                    <div><code style="white-space: pre-wrap;">${info.raw}</code> <span class="count">[${info.count} Students]</span></div>
+                    <div><code style="white-space: pre-wrap;">${escapeHtml(info.raw)}</code> <span class="count">[${info.count} Students]</span></div>
                 </div>
             `;
         });
