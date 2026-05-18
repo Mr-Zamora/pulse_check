@@ -74,20 +74,27 @@ function renderRoomTable(rooms) {
         const timeDisplay = room.time_remaining ? `${room.time_remaining}s` : '-';
         const stateClass = `state-${room.state.toLowerCase()}`;
         
+        const safeId = room.room_id.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         html += `<tr>
-            <td><strong>${room.room_id}</strong></td>
+            <td><strong>${safeId}</strong></td>
             <td><span class="state-badge ${stateClass}">${room.state}</span></td>
             <td>${questionDisplay}</td>
             <td>${room.student_count}</td>
             <td>${timeDisplay}</td>
             <td class="actions-cell">
-                <button class="btn-small" onclick="deleteRoom('${room.room_id}')" title="Delete this room">🗑️</button>
+                <button class="btn-small delete-room-btn" data-room-id="${safeId}" title="Delete this room">🗑️</button>
             </td>
         </tr>`;
     });
     
     html += '</tbody></table>';
     container.innerHTML = html;
+
+    container.querySelectorAll('.delete-room-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            deleteRoom(this.dataset.roomId);
+        });
+    });
 }
 
 function deleteRoom(roomId) {
