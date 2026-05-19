@@ -157,7 +157,7 @@ function showWaitingState() {
                     <span style="font-size: 24px;">🤖</span>
                     AI Teacher Explainer
                 </h3>
-                <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; line-height: 1.6; color: #1E293B;">
+                <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; line-height: 1.6; color: #1E293B; text-align: left;">
                     ${lastStateData.explainer_text.replace(/\n/g, '<br>')}
                 </div>
                 <p style="color: #64748B; text-align: center; font-style: italic;">

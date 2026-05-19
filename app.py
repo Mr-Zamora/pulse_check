@@ -591,6 +591,7 @@ Write a clear, concise explanation (100-150 words, 1-2 paragraphs) that:
 3. **Guides thinking:** Help them approach the question logically
 4. **Avoids spoilers:** Do NOT reveal the correct answer or make it obvious
 5. **Uses simple language:** Appropriate for high school students
+6. **Uses Australian spelling:** Use colour (not color), organise (not organize), etc.
 
 ### INPUT ###
 * **Question:** {question['prompt']}
