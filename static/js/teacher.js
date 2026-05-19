@@ -18,6 +18,13 @@ const ribbonTimer = document.getElementById('ribbon-timer');
 const ribbonSub = document.getElementById('ribbon-submitted');
 const ribbonTot = document.getElementById('ribbon-total');
 
+// Button elements
+const prepareBtn = document.querySelector('.btn-prepare');
+const aiExplainerBtn = document.querySelector('[onclick="generateAIExplainer()"]');
+const startBtn = document.querySelector('.btn-start');
+const lockBtn = document.querySelector('.btn-lock');
+const resetBtn = document.querySelector('.btn-reset');
+
 // --- Utility: HTML Escaping (prevent XSS from student-supplied text) ---
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -341,6 +348,7 @@ function pollServer() {
             }
             
             updateRibbonState(roomData);
+            updateButtonStates(roomData.room_state);
             fetchResponses();
             
             // Clear any connection error styling if it was present
@@ -454,6 +462,54 @@ function updateRibbonState(data) {
         ribbonTimer.textContent = "LOCKED";
         ribbonTimer.style.color = "#10B981"; // Green
     }
+}
+
+function updateButtonStates(roomState) {
+    // Prepare Question and AI Explainer: only enabled in WAITING state
+    if (roomState === 'WAITING') {
+        prepareBtn.disabled = false;
+        prepareBtn.style.opacity = '1';
+        prepareBtn.style.cursor = 'pointer';
+        
+        aiExplainerBtn.disabled = false;
+        aiExplainerBtn.style.opacity = '1';
+        aiExplainerBtn.style.cursor = 'pointer';
+    } else {
+        prepareBtn.disabled = true;
+        prepareBtn.style.opacity = '0.5';
+        prepareBtn.style.cursor = 'not-allowed';
+        
+        aiExplainerBtn.disabled = true;
+        aiExplainerBtn.style.opacity = '0.5';
+        aiExplainerBtn.style.cursor = 'not-allowed';
+    }
+    
+    // Start Quiz: only enabled in WAITING state
+    if (roomState === 'WAITING') {
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+    } else {
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+        startBtn.style.cursor = 'not-allowed';
+    }
+    
+    // Lock Submissions: only enabled in ACTIVE state
+    if (roomState === 'ACTIVE') {
+        lockBtn.disabled = false;
+        lockBtn.style.opacity = '1';
+        lockBtn.style.cursor = 'pointer';
+    } else {
+        lockBtn.disabled = true;
+        lockBtn.style.opacity = '0.5';
+        lockBtn.style.cursor = 'not-allowed';
+    }
+    
+    // Reset: always enabled
+    resetBtn.disabled = false;
+    resetBtn.style.opacity = '1';
+    resetBtn.style.cursor = 'pointer';
 }
 
 let isAnonymized = false;
