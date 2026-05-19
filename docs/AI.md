@@ -41,15 +41,15 @@ __pycache__/
 database/*.db
 database/*.db-*
 3. Model
-For Pulse Check, we use `gemini-pro` for educational explanations:
+For Pulse Check, we use `gemini-3.1-flash-lite` for educational explanations:
 
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-3.1-flash-lite')
 
 This model is optimized for:
 - Clear, educational explanations
 - Appropriate language for high school students
-- Reliable JSON output formatting
-- Fast response times (<2 seconds)
+- Fast response times (1-4 seconds)
+- Free tier friendly
 
 4. SDK Configuration Pattern
 import google.generativeai as genai
@@ -90,6 +90,7 @@ Write a clear, concise explanation (100-150 words, 1-2 paragraphs) that:
 3. **Guides thinking:** Help them approach the question logically
 4. **Avoids spoilers:** Do NOT reveal the correct answer or make it obvious
 5. **Uses simple language:** Appropriate for high school students
+6. **Uses Australian spelling:** Use colour (not color), organise (not organize), etc.
 
 ### INPUT ###
 * **Question:** {question['prompt']}
@@ -176,17 +177,40 @@ def generate_explainer():
 
 
 def generate_ai_explainer(question):
-    """Call Gemini API to generate explanation"""
-    try:
-        from admin import GEMINI_API_KEY
-        genai.configure(api_key=GEMINI_API_KEY)
-    except (ImportError, AttributeError):
-        return "AI Explainer not configured. Please add GEMINI_API_KEY to admin.py"
+    """Call Gemini API to generate pedagogical explanation"""
+    model = genai.GenerativeModel('gemini-3.1-flash-lite')
     
-    model = genai.GenerativeModel('gemini-pro')
-    prompt = construct_explainer_prompt(question)
+    prompt = f"""### ROLE ###
+You are a high school teacher preparing students for a quiz question.
+Your audience is high school students aged 15-18.
+Your goal is to teach them the concepts they need to answer the question correctly.
+
+### CONTEXT ###
+This is part of a live classroom quiz system. Students will see your explanation
+for 30-60 seconds before the question appears. They need just enough information
+to understand the concepts, but you should NOT give away the answer directly.
+
+Question Type: {question['type']}
+- If MCQ: Students will choose from multiple options
+- If SHORT: Students will write a brief answer
+
+### TASK ###
+Write a clear, concise explanation (100-150 words, 1-2 paragraphs) that:
+
+1. **Teaches the concept:** Explain the key ideas students need to understand
+2. **Provides context:** Give relevant background or examples
+3. **Guides thinking:** Help them approach the question logically
+4. **Avoids spoilers:** Do NOT reveal the correct answer or make it obvious
+5. **Uses simple language:** Appropriate for high school students
+6. **Uses Australian spelling:** Use colour (not color), organise (not organize), etc.
+
+### INPUT ###
+* **Question:** {question['prompt']}
+* **Type:** {question['type']}
+
+Write your explanation now:"""
+    
     response = model.generate_content(prompt)
-    
     return response.text.strip()
 ```
 
@@ -364,3 +388,56 @@ Before deploying:
 - [ ] Test fallback when API key is missing
 - [ ] Check response time (<3 seconds)
 - [ ] Verify explainer clears when quiz starts
+
+12. Implementation Details & Fixes
+
+12.1 Button State Management
+Buttons are automatically enabled/disabled based on room state to prevent confusion:
+- **WAITING state**: Prepare Question, AI Explainer, Start Quiz enabled
+- **ACTIVE state**: Only Lock Submissions enabled (others greyed out)
+- **LOCKED state**: Only Reset enabled
+- This prevents teachers from generating explainers during active quiz
+
+12.2 Student Polling
+- Student polling interval: 1 second (reduced from 2 seconds for faster updates)
+- Students see explainer updates within 1-6 seconds of teacher clicking AI Explainer button
+
+12.3 Database Location (PythonAnywhere)
+- On PythonAnywhere, database stored in `/tmp/classroom_pulse.db` to avoid NFS I/O errors
+- This prevents "disk I/O error" issues on free-tier PythonAnywhere
+- Note: `/tmp` database is cleared on server restart (room states reset, responses remain in CSV)
+
+12.4 Explainer Display Logic
+- Explainer only shows in WAITING state (before quiz starts)
+- Explainer is left-aligned for better readability
+- Explainer is automatically cleared when:
+  - Teacher clicks "Prepare Question" for a new question
+  - Teacher clicks "Start Quiz Now"
+- Students see explainer automatically without page refresh (polling-based)
+
+12.5 Performance Characteristics
+- Total delay: 3-6 seconds (expected variation)
+  - Gemini API generation: 1-4 seconds (varies with question complexity)
+  - Student polling: 0-1 second
+  - Network latency: 0.5-2 seconds
+- Variation is normal due to:
+  - Gemini server load
+  - Question complexity
+  - Network conditions
+
+12.6 Fixes Applied During Implementation
+- Fixed database corruption by moving to `/tmp` (avoided NFS I/O errors)
+- Added missing `lastStateData` variable in student.js
+- Added explainer columns to allowed room_state columns
+- Updated to `gemini-3.1-flash-lite` model (gemini-pro deprecated)
+- Added Australian spelling convention to prompt
+- Fixed button styling (white text on AI Explainer button)
+- Added explainer change detection for auto-updating student view
+
+13. Current Behavior Summary
+- Teacher selects question → Clicks "🤖 AI Explainer" → Explainer generated in 2-4 seconds
+- Students see explainer automatically within 1-6 seconds in WAITING state
+- Explainer displays with left alignment and Australian spelling
+- Buttons automatically disable during ACTIVE quiz to prevent confusion
+- Explainer clears when preparing new question or starting quiz
+- All changes committed and deployed to production
