@@ -1,0 +1,688 @@
+<div id="dp-wrapper" class="dp-wrapper dp-flat-sections" data-header-class="dp-header dp-flat-sections" data-nav-class="container-fluid dp-link-grid dp-flat-sections dp-fs-1" data-img-url="https://files.ciditools.com/generic/books.jpg">
+    <p class="">&nbsp;</p>
+    <header class="dp-header dp-flat-sections">
+        <h2 class="dp-heading"><span style="font-family: georgia, palatino;"><span class="dp-header-pre"><span class="dp-header-pre-1">2.0 Object Oriented Paradigm</span></span> <span class="dp-header-title">Lesson 5: Structure Charts &amp; Class Diagrams</span></span></h2>
+    </header>
+    <div class="dp-content-block content-block cp-bg-dp-white">
+        <h3 class="dp-has-icon"><span style="font-family: georgia, palatino;"><i class="dp-icon fas fa-user-graduate" aria-hidden="true"> </i>&nbsp;Learning Intention<br /></span></h3>
+        <p><strong>Structure Charts</strong></p>
+        <ul class="list-group">
+            <li>Understand the components and symbols used in structure charts for system design.</li>
+            <li>Learn how to interpret and create structure charts to represent software systems.</li>
+            <li>Apply knowledge of structure charts to analyse and design a given code structure.</li>
+        </ul>
+        <p><strong>Class Diagrams</strong></p>
+        <ul class="list-group">
+            <li>Understand the purpose and components of class diagrams in object-oriented programming.</li>
+            <li>Learn how to model classes, attributes, methods, and relationships using class diagrams.</li>
+            <li>Grasp the concepts of inheritance, aggregation, method overriding, and polymorphism through practical examples.</li>
+        </ul>
+    </div>
+    <div class="dp-content-block content-block">
+        <h3 class="dp-has-icon"><span style="font-family: georgia, palatino;"> &nbsp;Success Criteria<br /></span></h3>
+        <p><strong>Structure Charts</strong></p>
+        <ul class="list-group">
+            <li>Correctly identify and explain the meaning of symbols (empty circle, filled circle, diamond, curved arrow) used in structure charts.</li>
+            <li>Accurately create a structure chart for a given piece of code, demonstrating the relationships and data flow between subroutines.</li>
+            <li>Analyse a provided structure chart, explaining the interactions and processes depicted, and suggest improvements or refinements.<strong></strong></li>
+        </ul>
+        <p><strong>Class Diagrams</strong></p>
+        <ul class="list-group">
+            <li>Identify the main components of a class diagram, including classes, attributes, methods, and relationships.</li>
+            <li>Create a class diagram for a given set of classes and relationships, accurately representing inheritance and aggregation.</li>
+            <li>Explain the use and value of class diagrams in designing and understanding object-oriented systems.</li>
+        </ul>
+    </div>
+    <div class="dp-content-block content-block cp-bg-dp-white">
+        <h3 class="dp-has-icon"><span style="font-family: georgia, palatino;"><i class="fas fa-dumbbell"></i> </span><br /><span style="font-family: georgia, palatino;">Learning Muscle</span></h3>
+        <div class="dp-panels-wrapper dp-tabs">
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading"><strong>Structure Charts</strong></h3>
+                <div class="dp-panel-content">
+                    <p>Structure charts are essential tools in software engineering, particularly for designing and documenting complex systems. They visually represent the breakdown of a system into subroutines and illustrate how these subroutines interact with one another. Here&rsquo;s a detailed explanation of the symbols used in structure charts and their significance:</p>
+                    <h3>Symbols and Their Meanings</h3>
+                    <ol>
+                        <li>
+                            <p><strong>Empty Circle</strong>: <img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111747/preview" alt="image.png" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111747" data-api-returntype="File" /></p>
+                            <ul>
+                                <li><strong>Meaning</strong>: Indicates data movement between subroutines.</li>
+                                <li><strong>Usage</strong>: Typically used to show parameters passed between subroutines.</li>
+                                <li><strong>Library System Example</strong>: In the diagram, an empty circle is used between "Check book" and "Update files" to show that "Book details" are passed as parameters.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Filled Circle</strong>:<img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111746/preview" alt="image.png" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111746" data-api-returntype="File" /></p>
+                            <ul>
+                                <li><strong>Meaning</strong>: Represents a flag or control variable passed between subroutines.</li>
+                                <li><strong>Usage</strong>: Used to indicate a condition or state being shared between subroutines.</li>
+                                <li><strong>Library System Example</strong>: The filled circle between "Validate student information" and "Process books" indicates that a "Valid student information" flag is being passed.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Small Diamond</strong>: <img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111748/preview" alt="image.png" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111748" data-api-returntype="File" /></p>
+                            <ul>
+                                <li><strong>Meaning</strong>: Represents a decision point (optional execution of a subroutine).</li>
+                                <li><strong>Usage</strong>: Used at the intersection of connecting lines between subroutines that are conditionally called. Alternatively, it may appear on a single connecting line if calling that subroutine is optional.</li>
+                                <li><strong>Library System Example</strong>: The small diamond between "Returning" and "Check book" shows that checking the book is an optional decision point based on certain conditions.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Curved Arrow</strong>: <img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111749/preview" alt="image.png" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111749" data-api-returntype="File" /></p>
+                            <ul>
+                                <li><strong>Meaning</strong>: Indicates repetition (execution of a subroutine or set of subroutines multiple times).</li>
+                                <li><strong>Usage</strong>: Shows loops or repeated processes within the system.</li>
+                                <li><strong>Library System Example</strong>: The curved arrow from "School library system" to "Borrowing" and "Returning" indicates these processes are repeated until the library closes.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Example: Library System Structure Chart</h3>
+                    <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111750/preview" alt="image.png" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111750" data-api-returntype="File" /></p>
+                    <h3>Main Components of the Structure Chart</h3>
+                    <ol>
+                        <li>
+                            <p><strong>School Library System</strong>:</p>
+                            <ul>
+                                <li>The main control unit of the system.</li>
+                                <li><strong>Function</strong>: Central control unit managing borrowing and returning processes.</li>
+                                <li><strong>Repetition</strong>: Executes until the library closes, indicated by a curved arrow looping back to the main system.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Borrowing</strong>:</p>
+                            <ul>
+                                <li><strong>Validate Student Information</strong>:
+                                    <ul>
+                                        <li>Receives <strong>Valid student information</strong> (indicated by an empty circle).</li>
+                                        <li>Uses a <strong>flag</strong> (filled circle) to indicate the validity of student information.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Book Information</strong>:
+                                    <ul>
+                                        <li>Receives <strong>Book ID</strong> as a parameter (empty circle).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Process Books</strong>:
+                                    <ul>
+                                        <li>Controlled by a decision (small diamond), (curved arrow) indicating it processes until there are no more books.</li>
+                                        <li>Receives <strong>Student ID</strong> and <strong>Book available</strong> flag as inputs.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Update Book and Student Files</strong>:
+                                    <ul>
+                                        <li>Receives <strong>Book ID</strong> and <strong>Student ID</strong> (empty circles).</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Returning</strong>:</p>
+                            <ul>
+                                <li><strong>Check Book</strong>:
+                                    <ul>
+                                        <li>Uses a <strong>flag</strong> (filled circle) for <strong>Overdue flag</strong>.</li>
+                                        <li>Receives <strong>Book details</strong> (empty circle).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Locate Book Record</strong>:
+                                    <ul>
+                                        <li>Uses <strong>Book details</strong> as a parameter (empty circle).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Check if Overdue</strong>:
+                                    <ul>
+                                        <li>Uses <strong>Date due</strong> and <strong>Overdue flag</strong> (empty and filled circles).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Update Files</strong>:
+                                    <ul>
+                                        <li>Receives <strong>Student details</strong> and <strong>Book details</strong> as parameters (empty circles).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Reports</strong>:
+                                    <ul>
+                                        <li>Optionally generates reports based on <strong>Student details</strong> and <strong>Book details</strong> (indicated by a decision diamond and empty circles).</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Key Features Illustrated</h3>
+                    <ul>
+                        <li>
+                            <p><strong>Repetition</strong>:</p>
+                            <ul>
+                                <li>Indicated by a curved arrow from the main program to <strong>Borrowing</strong> and <strong>Returning</strong>, showing these actions are repeated until the library closes.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Decision Points</strong>:</p>
+                            <ul>
+                                <li>Diamonds show optional execution of certain subroutines, such as <strong>Process Books</strong> and the <strong>Reports</strong> generation.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Data Movement</strong>:</p>
+                            <ul>
+                                <li>Empty circles indicate data parameters passed between subroutines.</li>
+                                <li>Filled circles indicate flags or control variables passed between subroutines.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Refinement</strong>:</p>
+                            <ul>
+                                <li>Lower-level subroutines can be detailed further in separate charts, which is part of the refinement process.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <h3>Refinement</h3>
+                    <p>Further details for each lower-level subroutine can be provided in separate, more detailed structure charts. This approach, known as <strong>refinement</strong>, helps in breaking down complex processes into manageable components. For instance, the <strong>Return Book</strong> subroutine could be further detailed into subroutines like <strong>Validate Return</strong>, <strong>Calculate Fines</strong>, and <strong>Update Inventory</strong>.</p>
+                </div>
+            </div>
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading"><strong>Class Diagrams</strong></h3>
+                <div class="dp-panel-content">
+                    <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111764/preview" alt="image.png" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111764" data-api-returntype="File" /></p>
+                    <h3>What Are Class Diagrams?</h3>
+                    <p>Class diagrams are a type of diagram used in software engineering to visually represent the structure of a system. They show the system's classes, their attributes (data), methods (functions), and the relationships between these classes.</p>
+                    <h3>Components of a Class Diagram</h3>
+                    <ol>
+                        <li>
+                            <p><strong>Classes:</strong></p>
+                            <ul>
+                                <li><strong>Class Name:</strong> The name of the class.</li>
+                                <li><strong>Attributes:</strong> Characteristics or properties of the class (e.g., name, age).</li>
+                                <li><strong>Methods:</strong> Actions or functions that the class can perform (e.g., saveData(), calculateAge()).</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Relationships:</strong></p>
+                            <ul>
+                                <li><strong>Inheritance:</strong> This shows that one class (child) is derived from another class (parent), inheriting its attributes and methods.</li>
+                                <li><strong>Association:</strong> This indicates how classes interact with each other, showing relationships and interactions.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Multiplicity:</strong></p>
+                            <ul>
+                                <li>These are numbers that specify how many instances of a class can be associated with instances of another class.</li>
+                                <li>Common multiplicity values:
+                                    <ul>
+                                        <li><code>1..1</code>: Exactly one instance.</li>
+                                        <li><code>0..*</code>: Zero or more instances.</li>
+                                        <li><code>1..*</code>: One or more instances.</li>
+                                        <li><code>0..1</code>: Zero or one instance.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Example Breakdown</h3>
+                    <p>Let's look at the example class diagram in more detail:</p>
+                    <ol>
+                        <li>
+                            <p><strong>Person Class:</strong></p>
+                            <ul>
+                                <li><strong>Attributes:</strong>
+                                    <ul>
+                                        <li><code>firstName</code>: Stores the first name as a string.</li>
+                                        <li><code>lastName</code>: Stores the last name as a string.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Methods:</strong>
+                                    <ul>
+                                        <li><code>printFullName()</code>: Prints the full name of the person.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Student Class:</strong></p>
+                            <ul>
+                                <li>Inherits from <code>Person</code>, meaning it gets all attributes and methods of <code>Person</code>.</li>
+                                <li><strong>Additional Attributes:</strong>
+                                    <ul>
+                                        <li><code>studentID</code>: An integer for the student&rsquo;s ID.</li>
+                                        <li><code>homeroom</code>: A string for the homeroom name.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Additional Methods:</strong>
+                                    <ul>
+                                        <li><code>enrolClass()</code>: Allows the student to enrol in a class.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Relationships:</strong>
+                                    <ul>
+                                        <li>A <code>Student</code> must study at least one <code>Subject</code> (<code>1..*</code>), and a <code>Subject</code> can have zero or more students (<code>0..*</code>).</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Parent Class:</strong></p>
+                            <ul>
+                                <li>Inherits from <code>Person</code>.</li>
+                                <li><strong>Additional Attributes:</strong>
+                                    <ul>
+                                        <li><code>occupation</code>: A string for the parent&rsquo;s job.</li>
+                                        <li><code>alumni</code>: A boolean to indicate if they are an alumnus.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Subject Class:</strong></p>
+                            <ul>
+                                <li><strong>Attributes:</strong>
+                                    <ul>
+                                        <li><code>studentID</code>: Stores subject ID as an integer.</li>
+                                        <li><code>subjectName</code>: Stores the name of the subject as a string.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Methods:</strong>
+                                    <ul>
+                                        <li><code>printStudentList()</code>: Prints a list of students enrolled in the subject.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Relationships:</strong>
+                                    <ul>
+                                        <li><code>Subject</code> can have multiple students enrolled (<code>0..*</code>).</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Use and Value of Class Diagrams</h3>
+                    <ol>
+                        <li>
+                            <p><strong>Organisation:</strong></p>
+                            <ul>
+                                <li>Class diagrams help organise and visualise the structure of a system, making it easier to understand how different parts interact.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Communication:</strong></p>
+                            <ul>
+                                <li>They provide a clear way to communicate the design of a system to stakeholders, including developers, managers, and clients.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Planning:</strong></p>
+                            <ul>
+                                <li>Class diagrams are useful for planning the structure of a system before coding begins. This helps in identifying potential issues early.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Documentation:</strong></p>
+                            <ul>
+                                <li>They serve as part of the system&rsquo;s documentation, useful for future reference and for new team members to understand the system.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Code Generation:</strong></p>
+                            <ul>
+                                <li>Some development tools can generate code automatically from class diagrams, speeding up the development process.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Simplified Example</h3>
+                    <p>Imagine creating a simple school system with the following classes:</p>
+                    <ul>
+                        <li><strong>Person:</strong> Stores basic information like <code>firstName</code> and <code>lastName</code>.</li>
+                        <li><strong>Student:</strong> Inherits from <code>Person</code> and adds <code>studentID</code> and <code>homeroom</code>.</li>
+                        <li><strong>Subject:</strong> Represents school subjects with <code>subjectID</code> and <code>subjectName</code>.</li>
+                    </ul>
+                    <p>The class diagram shows:</p>
+                    <ul>
+                        <li>A <code>Student</code> must be enrolled in at least one <code>Subject</code>.</li>
+                        <li>A <code>Subject</code> can have many <code>Students</code>.</li>
+                    </ul>
+                    <p>This visual representation makes it easy to see the relationships and understand how the system should be structured.</p>
+                    <p>&nbsp;</p>
+                </div>
+            </div>
+        </div>
+        <p>&nbsp;</p>
+        <hr />
+        <p>&nbsp;</p>
+    </div>
+    <div class="dp-content-block content-block">
+        <h3 class="dp-has-icon"><span style="font-family: georgia, palatino;"><i class="dp-icon fas fa-paperclip" aria-hidden="true"> </i>&nbsp;Resources</span></h3>
+        <p><strong><span style="color: #e03e2d;">Powerpoint template</span> - Structure Charts AND Class Diagrams</strong></p>
+        <p><strong><a class="instructure_file_link instructure_scribd_file inline_disabled" title="structure_charts_AND_class_diagram_RPG_framework.pptx" href="https://learn.sasc.nsw.edu.au/courses/55985/files/8111869?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="false" data-api-endpoint="https://learn.sasc.nsw.edu.au/api/v1/courses/55985/files/8111869" data-api-returntype="File">structure_charts_AND_class_diagram_RPG_framework.pptx</a></strong></p>
+        <p>&nbsp;</p>
+        <p><strong>Software Specifications </strong>- (Structure Charts, p7), (Class Diagrams, p9)</p>
+        <p><a href="https://library.curriculum.nsw.edu.au/341419dc-8ec2-0289-7225-6db7f2d751ef/94e1eb0a-0df7-4dbe-9b72-5d5e0d17143a/software-engineering-11-12-higher-school-certificate-course-specifications.PDF" target="_blank" rel="noopener">https://library.curriculum.nsw.edu.au/341419dc-8ec2-0289-7225-6db7f2d751ef/94e1eb0a-0df7-4dbe-9b72-5d5e0d17143a/software-engineering-11-12-higher-school-certificate-course-specifications.PDF</a></p>
+        <p>&nbsp;</p>
+        <p><span style="font-family: georgia, palatino;"><strong>Structure Charts</strong></span></p>
+        <hr />
+        <div class="dp-panels-wrapper dp-accordion-default">
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading">Introduction to Structure Charts</h3>
+                <div class="dp-panel-content">
+                    <p><a href="https://youtu.be/kVV1TJ_VR0o?si=lS-VZtSO7SIun5aX" target="_blank" rel="noopener">https://youtu.be/kVV1TJ_VR0o?si=lS-VZtSO7SIun5aX</a></p>
+                    <p><span>The video provides an introduction to structure charts, a visual method for planning source code. It explains how structure charts graphically model the relationship between modules in a hierarchical format. Key elements include process symbols for modular subroutines, call lines connecting processes, decision symbols for branching pathways, repetition symbols for iterative steps, and parameters indicating data flow and control checks. An example using an email server illustrates these concepts, showing login verification, viewing, composing, and managing messages. The video emphasises understanding control structures and data movement within systems.</span></p>
+                </div>
+            </div>
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading">Structure Chart Scenarios - Netflix, Online Shopping, Checkout&nbsp;</h3>
+                <div class="dp-panel-content">
+                    <p>Streaming Service: <a href="https://youtu.be/1OfQ9f9-G7E?si=uVvZPzrMOHUbnxo7" target="_blank" rel="noopener">https://youtu.be/1OfQ9f9-G7E?si=uVvZPzrMOHUbnxo7</a></p>
+                    <p>Online Shopping: <a href="https://youtu.be/xkNc3KD7XPI?si=g4nzTqG-Yepshdy2" target="_blank" rel="noopener">https://youtu.be/xkNc3KD7XPI?si=g4nzTqG-Yepshdy2</a></p>
+                    <p>Checkout System: <a href="https://youtu.be/rP9_MhQ6Z_U?si=mhqLwbDZMtfelyLb" target="_blank" rel="noopener">https://youtu.be/rP9_MhQ6Z_U?si=mhqLwbDZMtfelyLb</a></p>
+                    <p>&nbsp;</p>
+                </div>
+            </div>
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading">Structure Chart - RPG Framework</h3>
+                <div class="dp-panel-content">
+                    <p><a href="https://learn.sasc.nsw.edu.au/courses/55985/files/8111773?wrap=1" target="_blank" rel="noopener">structure_charts_RPG_framework.pptx</a></p>
+                    <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111771/preview" alt="image.png" /></p>
+                    
+                    <h3>✅ What&rsquo;s Correct</h3>
+                    <p><strong>Symbols</strong></p>
+                    <ul>
+                        <li>Empty circles (◯) are correctly used to represent data parameters such as name, health, and combat details.</li>
+                        <li>Filled circles (●) are correctly used to represent control flags such as a valid choice or health status.</li>
+                        <li>A decision diamond is appropriately placed before branching to either the victory or defeat path.</li>
+                        <li>The curved double-headed arrow between display character details, display boss details, and the combat process correctly indicates repetition until a condition is met.</li>
+                    </ul>
+                    
+                    <hr />
+                    
+                    <h3>❌ What&rsquo;s Incorrect or Misleading</h3>
+                    <p><strong>Process Naming</strong></p>
+                    <ul>
+                        <li>Some process boxes use UI or screen-based labels (e.g. <em>Welcome Intro</em>, <em>Level 1/2 Story</em>, <em>Display Character Details</em>).</li>
+                        <li>These labels should be replaced with action-based, function-style labels using concise, functional naming (e.g. <em>Show Intro</em>, <em>Show Story</em>, <em>Show Stats</em>).</li>
+                    </ul>
+                    
+                    <p><strong>Decomposition</strong></p>
+                    <ul>
+                        <li>The process labelled <em>Combat System</em> is too broad. It should be broken down into smaller, clearer sub-processes such as <em>Compare Stats</em>, <em>Apply Damage</em>, or <em>Check Result</em>.</li>
+                        <li>Without this, the internal logic of combat is hidden and lacks clarity for implementation or refinement.</li>
+                    </ul>
+                    
+                    <p><strong>Conditional Flow Placement</strong></p>
+                    <ul>
+                        <li>The loop condition ("until health &le; 0") is incorrectly placed between two display processes.</li>
+                        <li>The loop should instead surround the entire combat process and be linked to an appropriate control flag to indicate continuation or exit.</li>
+                    </ul>
+                    
+                    <p><strong>Game End Process</strong></p>
+                    <ul>
+                        <li><em>Game Over</em> is shown after both <em>Victory</em> and <em>Defeat</em>, but it is not clearly defined as a distinct process.</li>
+                        <li>It should either be merged into a final process like <em>End Game</em> or clearly labelled as a terminal message process if necessary.</li>
+                    </ul>
+                    
+                    <hr />
+                    
+                    <h3>🔎 Summary Table</h3>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Element</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Use of structure chart symbols</td>
+                                <td>✅</td>
+                                <td>Circles, diamonds, and arrows are used appropriately</td>
+                            </tr>
+                            <tr>
+                                <td>Hierarchical structure</td>
+                                <td>✅</td>
+                                <td>Top-down hierarchy is present and consistent</td>
+                            </tr>
+                            <tr>
+                                <td>Process naming</td>
+                                <td>❌</td>
+                                <td>Labels should describe processes, not screens or UI elements</td>
+                            </tr>
+                            <tr>
+                                <td>Decomposition</td>
+                                <td>❌</td>
+                                <td>The combat process needs to be broken into smaller components</td>
+                            </tr>
+                            <tr>
+                                <td>Conditional flow</td>
+                                <td>⚠️</td>
+                                <td>Loop logic should be more accurately placed</td>
+                            </tr>
+                            <tr>
+                                <td>Output handling</td>
+                                <td>❌</td>
+                                <td>Game Over state is unclear &mdash; should be defined as a process</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <hr />
+                    
+                    <h3>🧱 Updated Structure</h3>
+                    <pre>Show Intro
+◯ player name
+└── Setup Player
+&nbsp; &nbsp; ├── Select Weapon
+&nbsp; &nbsp; │ &nbsp; ◯ weapon data
+&nbsp; &nbsp; └── Confirm Choice
+&nbsp; &nbsp; &nbsp; &nbsp; ● valid choice
+&nbsp; &nbsp; &nbsp; &nbsp; &darr;
+Run Battles
+├── Show Boss
+│ &nbsp; ◯ boss data
+└── 🔁 Battle Loop &nbsp; &nbsp; &nbsp; &nbsp; &larr; repeat until outcome
+&nbsp; &nbsp; ├── Show Status
+&nbsp; &nbsp; │ &nbsp; ◯ combat stats
+&nbsp; &nbsp; ├── Player Turn
+&nbsp; &nbsp; │ &nbsp; ◯ player action
+&nbsp; &nbsp; ├── Boss Turn
+&nbsp; &nbsp; │ &nbsp; ◯ boss action
+&nbsp; &nbsp; └── Determine Outcome
+&nbsp; &nbsp; &nbsp; &nbsp; ● battle result
+&nbsp; &nbsp; &nbsp; &nbsp; ◇ End Game
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ◯ battle result</pre>
+                </div>
+            </div>
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading">Class Diagram - RPG Framework</h3>
+                <div class="dp-panel-content">
+                    <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111770/preview" alt="image.png" /></p>
+                    <p>This class diagram shows how different parts of the RPG framework are structured and related. The <code>Weapon</code> class represents weapons in the game, the <code>Character</code> class represents general characters, and the <code>Boss</code> class represents more powerful characters that inherit from <code>Character</code>. The <code>Game</code> class manages the overall game, including the player and the bosses. Inheritance is shown with solid lines, indicating which classes derive from others, while dashed lines represent associations, indicating how instances of these classes can interact with each other.</p>
+                    <h3>Classes and their components</h3>
+                    <ol>
+                        <li>
+                            <p><strong>Class: <code>Weapon</code></strong></p>
+                            <ul>
+                                <li><strong>Attributes:</strong>
+                                    <ul>
+                                        <li><code>name</code> (str): This is a string that holds the name of the weapon.</li>
+                                        <li><code>damage_bonus</code> (int): This is an integer that represents the additional damage the weapon can inflict.</li>
+                                    </ul>
+                                </li>
+                                <li>No methods</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Class: <code>Character</code></strong></p>
+                            <ul>
+                                <li><strong>Attributes:</strong>
+                                    <ul>
+                                        <li><code>name</code> (str): The name of the character.</li>
+                                        <li><code>health</code> (int): The health points of the character.</li>
+                                        <li><code>damage</code> (int): The base damage the character can inflict.</li>
+                                        <li><code>weapon</code> (Weapon or None): The weapon the character holds, which can either be an instance of the <code>Weapon</code> class or <code>None</code> if the character has no weapon. &nbsp;Setting <code>weapon=None</code> in the <code>Character</code> class constructor provides flexibility, simplifies object creation, and ensures the class can handle cases where a weapon is not assigned. It allows characters to be instantiated with or without a weapon, and the methods within the class can manage the presence or absence of a weapon accordingly.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Methods:</strong>
+                                    <ul>
+                                        <li><code>attack(self, enemy)</code>: A function that allows the character to attack an enemy.</li>
+                                        <li><code>display(self)</code>: A function that displays the character&rsquo;s information.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Class: <code>Boss</code></strong></p>
+                            <ul>
+                                <li><strong>Attributes:</strong>
+                                    <ul>
+                                        <li>Inherits all attributes from <code>Character</code>.</li>
+                                        <li>It specifies that the <code>weapon</code> is a specific "boss weapon". Unlike a <code>Character</code> which can have a <code>weapon</code> set to <code>None</code> by default, a <code>Boss</code> is always created with a specific weapon.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Methods:</strong>
+                                    <ul>
+                                        <li>Inherits methods from <code>Character</code>.</li>
+                                        <li><strong>Overrides:</strong>
+                                            <ul>
+                                                <li><code>attack(self, enemy)</code>: This method overrides the <code>attack</code> method from the <code>Character</code> class to add special behaviour for bosses, such as dealing additional damage and using a special attack.</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li><strong>Notes:</strong>
+                                    <ul>
+                                        <li>The <code>super().attack(enemy)</code> call is used to invoke the <code>attack</code> method of the <code>Character</code> class before adding the boss-specific behaviour.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Class: <code>Game</code></strong></p>
+                            <ul>
+                                <li><strong>Attributes:</strong>
+                                    <ul>
+                                        <li><code>player</code> (Character or None): This holds the player character, which is an instance of the <code>Character</code> class or <code>None</code> if no player is set.</li>
+                                        <li><code>bosses</code> (list of Boss): This is a list that contains multiple <code>Boss</code> objects.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Methods:</strong>
+                                    <ul>
+                                        <li><code>show_intro(self)</code>: Displays the game introduction.</li>
+                                        <li><code>setup_game(self, name)</code>: Sets up the game with the player&rsquo;s character name.</li>
+                                        <li><code>choose_weapon(self)</code>: Allows the player to choose a weapon.</li>
+                                        <li><code>get_input(self, prompt, options)</code>: Handles user input.</li>
+                                        <li><code>combat(self, player, enemy)</code>: Manages combat between the player and an enemy.</li>
+                                        <li><code>display_combat_status(self, player, enemy)</code>: Displays the status during combat.</li>
+                                        <li><code>handle_boss_battles(self)</code>: Manages the sequence of battles with bosses.</li>
+                                        <li><code>introduce_boss(self, boss)</code>: Introduces each boss.</li>
+                                        <li><code>print_victory_message(self, enemy)</code>: Prints a victory message after defeating an enemy.</li>
+                                        <li><code>print_defeat_message(self, enemy)</code>: Prints a defeat message if the player is defeated.</li>
+                                        <li><code>end_game(self, is_victory)</code>: Ends the game with a win or loss message.</li>
+                                        <li><code>run(self)</code>: Starts the game.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Relationships between classes</h3>
+                    <ol>
+                        <li>
+                            <p><strong>Inheritance:</strong></p>
+                            <ul>
+                                <li>Represented by solid lines with arrows.</li>
+                                <li><strong><code>Boss</code> Inherits from <code>Character</code>:</strong> This means that <code>Boss</code> is a specialized form of <code>Character</code> and inherits its attributes and methods. The <code>Boss</code> class can also override methods to change their behaviour.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><strong>Association:</strong></p>
+                            <ul>
+                                <li>Represented by dashed lines.</li>
+                                <li><strong><code>Character</code> and <code>Weapon</code>:</strong>
+                                    <ul>
+                                        <li>A <code>Character</code> can have an optional relationship with a <code>Weapon</code>, meaning a character can either have a weapon or none.</li>
+                                        <li>The multiplicity is <code>0..1</code>, indicating that a character can have zero or one weapon.</li>
+                                    </ul>
+                                </li>
+                                <li><strong><code>Game</code> and <code>Character/Boss</code>:</strong>
+                                    <ul>
+                                        <li>The <code>Game</code> class has a <code>player</code> attribute that references a <code>Character</code>.</li>
+                                        <li>The <code>Game</code> class has a <code>bosses</code> attribute that is a list of <code>Boss</code> objects, meaning a game can have one or more bosses.</li>
+                                        <li>The multiplicity for <code>bosses</code> is <code>1..*</code>, indicating that there is at least one boss.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <h3>Multiplicity</h3>
+                    <ul>
+                        <li>
+                            <p><strong><code>Character</code> to <code>Weapon</code>:</strong></p>
+                            <ul>
+                                <li><strong>Multiplicity:</strong> 0..1 (A character may have zero or one weapon).</li>
+                                <li><strong>Example:</strong>
+                                    <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111765/preview" alt="image.png" /></p>
+                                    <p><strong><code>Game</code> to <code>Bosses</code>:</strong></p>
+                                    <ul>
+                                        <li><strong>Multiplicity:</strong> 0..* (A game can have zero or more bosses).</li>
+                                        <li><strong>Example:</strong>
+                                            <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111766/preview" alt="image.png" /></p>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <h3>Illustrating Key Concepts</h3>
+                    <ul>
+                        <li>
+                            <p><strong>Inheritance and Method Overriding:</strong></p>
+                            <p><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111767/preview" alt="image.png" /></p>
+                        </li>
+                        <li>
+                            <p><strong>Polymorphism:</strong></p>
+                            <ul>
+                                <li>The <code>attack</code> method in <code>Character</code> is designed to be overridden by subclasses like <code>Boss</code>. This allows different types of characters (regular <code>Character</code> and <code>Boss</code>) to implement their own version of <code>attack</code> while sharing the same method signature. This is a key aspect of polymorphism where the same method can behave differently based on the object calling it.</li>
+                                <li><img src="https://learn.sasc.nsw.edu.au/courses/55985/files/8111769/preview" alt="image.png" /></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <p>&nbsp;</p>
+                </div>
+            </div>
+        </div>
+        <p>&nbsp;</p>
+        <p>&nbsp;</p>
+    </div>
+    <div class="dp-content-block cp-bg-dp-white">
+        <h3 class="dp-has-icon"><span style="font-family: georgia, palatino;"><i class="dp-icon fas fa-list-ol" aria-hidden="true"> </i> Learning Activities</span></h3>
+        <p class="cp-bg-dp-white">&nbsp;</p>
+        <div class="dp-panels-wrapper dp-tabs dp-panel-color-dp-primary dp-panel-active-color-dp-primary">
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading"><span style="font-family: georgia, palatino;">Surface Learning</span></h3>
+                <div class="dp-panel-content">
+                    <p>Use the Structure Chart RPG Framework with these extended functionalities:</p>
+                    <ul>
+                        <li>Choose a Companion after selecting a Weapon (Dog, Cat, Mouse)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading"><span style="font-family: georgia, palatino;">Digging Deeper</span></h3>
+                <div class="dp-panel-content">
+                    <p>Use the Structure Chart RPG Framework with these extended functionalities:</p>
+                    <ul>
+                        <li>Choose a Companion after selecting a Weapon (Dog, Cat, Mouse)</li>
+                        <li>If Mouse is selected give a bonus Weapon(Cheese Gun)</li>
+                        <li>Gain a Healing Potion +10 health if Boss1 is defeated</li>
+                        <li>If Mouse is selected, Boss2 has a Special Attack(Cheese Shield)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="dp-panel-group">
+                <h3 class="dp-panel-heading"><span style="font-family: georgia, palatino;">Transfer Learning</span></h3>
+                <div class="dp-panel-content">
+                    <p><span style="color: #ba372a;"><strong>HOME LEARNING: Due by our next class, uploaded to Canvas by 4 June</strong></span>&nbsp;</p>
+                    <p>Use the Structure Chart RPG Framework and what you learned in Surface Learning &amp; Digging Deeper:</p>
+                    <ul style="list-style-type: disc;">
+                        <li>Main Menu and Introduction of your own RPG game</li>
+                        <li>Level 1 of your own RPG game</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
